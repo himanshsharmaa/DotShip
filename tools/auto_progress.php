@@ -23,10 +23,16 @@ $waitTransitToDelivered = (int) (getenv('DS_WAIT_TRANSIT_TO_DELIVERED') ?: 120);
 
 function next_status(string $current): ?string
 {
-    $order = ['booked', 'packed', 'transit', 'delivered'];
+    // Use a conservative flow and do not auto-advance to 'delivered'
+    $order = ['booked', 'packed', 'transit', 'out_for_delivery', 'delivered'];
     $idx = array_search($current, $order, true);
     if ($idx === false) return null;
-    return $order[$idx + 1] ?? null;
+    // Prevent automatic progression from out_for_delivery -> delivered
+    $candidate = $order[$idx + 1] ?? null;
+    if ($candidate === 'delivered') {
+        return null;
+    }
+    return $candidate;
 }
 
 function ms_ago_to_utcdatetime(int $seconds): UTCDateTime
@@ -96,9 +102,15 @@ try {
         if ($result->getModifiedCount() > 0) {
             $updated++;
 
-            if ($next === 'transit' && !empty($doc['receiver_email']) && function_exists('dotship_create_otp') && function_exists('dotship_send_otp')) {
-                $deliveryCode = dotship_create_otp((string) ($doc['tracking_id'] ?? ''), (string) $doc['receiver_email'], 'email');
-                dotship_send_otp((string) $doc['receiver_email'], (string) $deliveryCode['code'], 'email', (string) ($doc['tracking_id'] ?? ''));
+            // When we auto-advance TO out_for_delivery, generate and send delivery code
+            if ($next === 'out_for_delivery' && !empty($doc['receiver_email']) && function_exists('dotship_create_otp') && function_exists('dotship_send_otp')) {
+                $tracking = (string) ($doc['tracking_id'] ?? '');
+                $deliveryCode = dotship_create_otp($tracking, (string) $doc['receiver_email'], 'email', 1800);
+                dotship_send_otp((string) $doc['receiver_email'], (string) $deliveryCode['code'], 'email', $tracking);
+                try {
+                    $db->shipments->updateOne(['_id' => $doc['_id']], ['$set' => ['code_generated_at' => new UTCDateTime(), 'expiry_time' => new UTCDateTime((int) round((microtime(true) + 1800) * 1000)), 'failed_attempts' => 0, 'verification_locked' => false]]);
+                } catch (Throwable) {
+                }
             }
 
             // insert a notification record

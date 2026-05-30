@@ -21,9 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $next = $order[$idx + 1] ?? null;
             if ($next !== null) {
                 $now = dotship_now();
-                dotship_collection('shipments')->updateOne(['_id' => $s['_id']], ['$set' => ['status' => $next, 'updated_at' => $now], '$push' => ['history' => ['status' => $next, 'label' => ucfirst($next), 'note' => 'Status updated by admin', 'at' => $now]]]);
-                dotship_notify($s, 'status_update', 'Admin advanced shipment to ' . $next);
-                dotship_flash('success', 'Shipment advanced to ' . ucfirst($next));
+                // Prevent admin from advancing directly to delivered
+                if ($next === 'delivered') {
+                    dotship_flash('danger', 'Delivered can only be set via delivery code verification.');
+                } else {
+                    dotship_collection('shipments')->updateOne(['_id' => $s['_id']], ['$set' => ['status' => $next, 'updated_at' => $now], '$push' => ['history' => ['status' => $next, 'label' => ucfirst($next), 'note' => 'Status updated by admin', 'at' => $now]]]);
+                    dotship_notify($s, 'status_update', 'Admin advanced shipment to ' . $next);
+                    dotship_flash('success', 'Shipment advanced to ' . ucfirst($next));
+                }
             }
         }
     }
@@ -35,9 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $contact = $s['receiver_email'] ?? $s['receiver_phone'] ?? '';
             $tracking = $s['tracking_id'] ?? '';
             if ($contact !== '') {
-                $otp = dotship_create_otp($tracking, $contact, filter_var($contact, FILTER_VALIDATE_EMAIL) ? 'email' : 'sms');
-                dotship_send_otp($contact, $otp['code'], filter_var($contact, FILTER_VALIDATE_EMAIL) ? 'email' : 'sms', $tracking);
-                dotship_flash('success', 'OTP sent to ' . $contact);
+                    // Reset failed attempts and locked state when admin requests a new OTP
+                    try {
+                        dotship_collection('shipments')->updateOne(['_id' => $s['_id']], ['$set' => ['failed_attempts' => 0, 'verification_locked' => false, 'updated_at' => dotship_now()]]);
+                    } catch (Throwable) {
+                    }
+
+                    $otp = dotship_create_otp($tracking, $contact, filter_var($contact, FILTER_VALIDATE_EMAIL) ? 'email' : 'sms', 1800);
+                    dotship_send_otp($contact, $otp['code'], filter_var($contact, FILTER_VALIDATE_EMAIL) ? 'email' : 'sms', $tracking);
+                    dotship_flash('success', 'OTP (delivery code) reissued to ' . $contact);
             } else {
                 dotship_flash('warning', 'No contact found for shipment');
             }

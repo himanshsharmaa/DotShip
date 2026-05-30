@@ -818,7 +818,7 @@ function dotship_generate_otp(int $length = 6): string
     return (string) random_int($min, $max);
 }
 
-function dotship_create_otp(string $trackingId, string $contact, string $method = 'email', int $ttlSeconds = 300): array
+function dotship_create_otp(string $trackingId, string $contact, string $method = 'email', int $ttlSeconds = 1800): array
 {
     $code = dotship_generate_otp();
     $hashed = password_hash($code, PASSWORD_DEFAULT);
@@ -920,6 +920,13 @@ function dotship_process_delivery_code(string $trackingId, string $code): array
         return ['ok' => false, 'message' => 'Verification locked for this shipment'];
     }
 
+    // Only allow verification when shipment is out for delivery or in transit
+    $allowed = ['out_for_delivery', 'transit'];
+    $currentStatus = (string) ($shipment['status'] ?? '');
+    if (!in_array($currentStatus, $allowed, true)) {
+        return ['ok' => false, 'message' => 'Delivery code can only be used when shipment is out for delivery'];
+    }
+
     // Search latest unused OTPs
     $cursor = dotship_collection('otps')->find(['tracking_id' => $trackingId, 'used' => false], ['sort' => ['created_at' => -1], 'limit' => 5]);
     $matched = false;
@@ -949,9 +956,18 @@ function dotship_process_delivery_code(string $trackingId, string $code): array
             } catch (Throwable) {
             }
 
+            // re-fetch updated shipment for accurate email content
+            $fresh = null;
+            try {
+                $freshObj = $shipColl->findOne(['_id' => $shipment['_id']]);
+                $fresh = $freshObj ? $freshObj->getArrayCopy() : $shipment;
+            } catch (Throwable) {
+                $fresh = $shipment;
+            }
+
             // send success emails and notify
-            dotship_send_delivery_success_emails($shipment);
-            dotship_notify($shipment, 'delivered', 'Delivery confirmed via code');
+            dotship_send_delivery_success_emails($fresh);
+            dotship_notify($fresh, 'delivered', 'Delivery confirmed via code');
 
             return ['ok' => true, 'message' => 'Delivery code verified. Shipment marked delivered'];
         }
