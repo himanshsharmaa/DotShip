@@ -105,6 +105,38 @@ function dotship_escape(string $value): string
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 
+function dotship_normalize_status(string $status): string
+{
+    $status = strtolower(trim($status));
+
+    return match ($status) {
+        'packed' => 'picked_up',
+        'in_transit' => 'transit',
+        'on_route' => 'transit',
+        'out_for_delivery' => 'out_for_delivery',
+        'verification_failed' => 'verification_failed',
+        default => $status,
+    };
+}
+
+function dotship_status_flow(): array
+{
+    return ['booked', 'picked_up', 'transit', 'out_for_delivery', 'delivered'];
+}
+
+function dotship_next_status(string $status): ?string
+{
+    $status = dotship_normalize_status($status);
+    $flow = dotship_status_flow();
+    $index = array_search($status, $flow, true);
+
+    if ($index === false) {
+        return null;
+    }
+
+    return $flow[$index + 1] ?? null;
+}
+
 function dotship_format_date(mixed $value, string $format = 'd M Y, h:i A'): string
 {
     if ($value instanceof UTCDateTime) {
@@ -126,26 +158,31 @@ function dotship_status_map(): array
 {
     return [
         'booked' => ['label' => 'Booked', 'badge' => 'bg-secondary', 'progress' => 1, 'icon' => 'clipboard-check'],
-        'packed' => ['label' => 'Packed', 'badge' => 'bg-info text-dark', 'progress' => 2, 'icon' => 'box-seam'],
-        'transit' => ['label' => 'Transit', 'badge' => 'bg-primary', 'progress' => 3, 'icon' => 'truck'],
-        'delivered' => ['label' => 'Delivered', 'badge' => 'bg-success', 'progress' => 4, 'icon' => 'check2-circle'],
+        'picked_up' => ['label' => 'Picked Up', 'badge' => 'bg-info text-dark', 'progress' => 2, 'icon' => 'box-seam'],
+        'transit' => ['label' => 'In Transit', 'badge' => 'bg-primary', 'progress' => 3, 'icon' => 'truck'],
+        'out_for_delivery' => ['label' => 'Out for Delivery', 'badge' => 'bg-warning text-dark', 'progress' => 4, 'icon' => 'geo-alt'],
+        'delivered' => ['label' => 'Delivered', 'badge' => 'bg-success', 'progress' => 5, 'icon' => 'check2-circle'],
+        'verification_failed' => ['label' => 'Verification Failed', 'badge' => 'bg-danger', 'progress' => 4, 'icon' => 'exclamation-triangle'],
     ];
 }
 
 function dotship_status_label(string $status): string
 {
+    $status = dotship_normalize_status($status);
     $map = dotship_status_map();
     return $map[$status]['label'] ?? ucfirst($status);
 }
 
 function dotship_status_badge(string $status): string
 {
+    $status = dotship_normalize_status($status);
     $map = dotship_status_map();
     return $map[$status]['badge'] ?? 'bg-secondary';
 }
 
 function dotship_status_progress(string $status): int
 {
+    $status = dotship_normalize_status($status);
     $map = dotship_status_map();
     return (int) ($map[$status]['progress'] ?? 1);
 }
@@ -170,11 +207,13 @@ function dotship_tracking_timeline(string $status): array
 {
     $base = [
         ['key' => 'booked', 'label' => 'Booked', 'note' => 'Order received and scheduled'],
-        ['key' => 'packed', 'label' => 'Packed', 'note' => 'Parcel prepared for dispatch'],
-        ['key' => 'transit', 'label' => 'Transit', 'note' => 'Moving through the network'],
+        ['key' => 'picked_up', 'label' => 'Picked Up', 'note' => 'Parcel collected by the delivery person'],
+        ['key' => 'transit', 'label' => 'In Transit', 'note' => 'Moving through the network'],
+        ['key' => 'out_for_delivery', 'label' => 'Out for Delivery', 'note' => 'Heading to the receiver with a delivery code'],
         ['key' => 'delivered', 'label' => 'Delivered', 'note' => 'Completed and signed off'],
     ];
 
+    $status = dotship_normalize_status($status);
     $progress = dotship_status_progress($status);
 
     foreach ($base as &$step) {
@@ -237,8 +276,10 @@ function dotship_tracking_events(array $shipment): array
     });
 
     $latestStatus = (string) ($shipment['status'] ?? 'booked');
+    $latestStatus = dotship_normalize_status($latestStatus);
 
     foreach ($events as $index => &$event) {
+        $event['status'] = dotship_normalize_status((string) $event['status']);
         $event['done'] = dotship_status_progress((string) $event['status']) <= dotship_status_progress($latestStatus);
         $event['active'] = $event['status'] === $latestStatus || $index === array_key_last($events);
         $event['icon'] = $event['done'] ? 'check2-circle' : 'clock-history';
@@ -256,6 +297,129 @@ function dotship_generate_tracking_id(): string
     } while ($collection->findOne(['tracking_id' => $id]) !== null);
 
     return $id;
+}
+
+function dotship_generate_delivery_code(int $minDigits = 4, int $maxDigits = 6): string
+{
+    $digits = random_int($minDigits, $maxDigits);
+    $min = (int) pow(10, $digits - 1);
+    $max = (int) pow(10, $digits) - 1;
+
+    return (string) random_int($min, $max);
+}
+
+function dotship_prepare_delivery_code(array $shipment, bool $force = false): array
+{
+    $now = dotship_now();
+    $hasCode = !empty($shipment['delivery_code']);
+    $expired = false;
+
+    if (!empty($shipment['expiry_time']) && $shipment['expiry_time'] instanceof UTCDateTime) {
+        $expired = $shipment['expiry_time']->getMilliseconds() < $now->getMilliseconds();
+    }
+
+    if (!$force && $hasCode && !$expired) {
+        return [
+            'delivery_code' => (string) $shipment['delivery_code'],
+            'code_generated_at' => $shipment['code_generated_at'] ?? $now,
+            'expiry_time' => $shipment['expiry_time'] ?? new UTCDateTime((int) round((microtime(true) + 1800) * 1000)),
+        ];
+    }
+
+    return [
+        'delivery_code' => dotship_generate_delivery_code(),
+        'code_generated_at' => $now,
+        'expiry_time' => new UTCDateTime((int) round((microtime(true) + 1800) * 1000)),
+        'failed_attempts' => 0,
+        'verification_locked' => false,
+        'delivery_verified' => false,
+    ];
+}
+
+function dotship_send_booking_confirmation_email(array $shipment): bool
+{
+    $senderEmail = (string) ($shipment['sender_email'] ?? '');
+    if ($senderEmail === '') {
+        return false;
+    }
+
+    $message = "Hello " . (string) ($shipment['sender_name'] ?? '') . ",\n\n";
+    $message .= "Your DOT SHIP booking is confirmed.\n\n";
+    $message .= "Tracking ID: " . (string) ($shipment['tracking_id'] ?? '') . "\n";
+    $message .= "Parcel: " . (string) ($shipment['parcel_description'] ?? '') . "\n";
+    $message .= "Receiver: " . (string) ($shipment['receiver_name'] ?? '') . "\n\n";
+    $message .= "Thank you for using DOT SHIP.";
+
+    $sent = dotship_send_mail($senderEmail, 'DOT SHIP Booking Confirmation', $message);
+
+    if ($sent) {
+        dotship_collection('shipments')->updateOne(['_id' => $shipment['_id']], ['$set' => ['booking_mail_sent' => true]]);
+    }
+
+    return $sent;
+}
+
+function dotship_send_pickup_confirmation_email(array $shipment): bool
+{
+    $senderEmail = (string) ($shipment['sender_email'] ?? '');
+    if ($senderEmail === '') {
+        return false;
+    }
+
+    $message = "Hello " . (string) ($shipment['sender_name'] ?? '') . ",\n\n";
+    $message .= "Your parcel has been picked up.\n\n";
+    $message .= "Tracking ID: " . (string) ($shipment['tracking_id'] ?? '') . "\n";
+    $message .= "Delivery is now underway.";
+
+    return dotship_send_mail($senderEmail, 'Parcel Picked Up', $message);
+}
+
+function dotship_send_delivery_code_email(array $shipment, bool $retryOnce = true): bool
+{
+    $receiverEmail = (string) ($shipment['receiver_email'] ?? '');
+    if ($receiverEmail === '') {
+        return false;
+    }
+
+    $code = (string) ($shipment['delivery_code'] ?? '');
+    if ($code === '') {
+        return false;
+    }
+
+    $message = "Hello " . (string) ($shipment['receiver_name'] ?? '') . ",\n\n";
+    $message .= "Your delivery verification code for DOT SHIP is: $code\n\n";
+    $message .= "Tracking ID: " . (string) ($shipment['tracking_id'] ?? '') . "\n\n";
+    $message .= "Please share this code with the delivery person only during delivery confirmation.";
+
+    $sent = dotship_send_mail($receiverEmail, 'Delivery Verification Code', $message);
+    if (!$sent && $retryOnce) {
+        $sent = dotship_send_mail($receiverEmail, 'Delivery Verification Code', $message);
+    }
+
+    if ($sent) {
+        dotship_collection('shipments')->updateOne(['_id' => $shipment['_id']], ['$set' => ['receiver_code_mail_sent' => true]]);
+    }
+
+    return $sent;
+}
+
+function dotship_send_delivery_success_emails(array $shipment): void
+{
+    $senderEmail = (string) ($shipment['sender_email'] ?? '');
+    $receiverEmail = (string) ($shipment['receiver_email'] ?? '');
+    $trackingId = (string) ($shipment['tracking_id'] ?? '');
+
+    if ($senderEmail !== '') {
+        $senderMessage = "Hello " . (string) ($shipment['sender_name'] ?? '') . ",\n\n";
+        $senderMessage .= "Your parcel has been delivered successfully.\n\nTracking ID: $trackingId\n\nThank you for choosing DOT SHIP.";
+        dotship_send_mail($senderEmail, 'Parcel Delivered Successfully', $senderMessage);
+    }
+
+    if ($receiverEmail !== '') {
+        $receiverMessage = "Hello " . (string) ($shipment['receiver_name'] ?? '') . ",\n\n";
+        $receiverMessage .= "Delivery has been confirmed successfully.\n\nThank you for using DOT SHIP.";
+        dotship_send_mail($receiverEmail, 'Delivery Confirmed', $receiverMessage);
+    }
 }
 
 function dotship_current_user(): ?array
@@ -619,25 +783,27 @@ function dotship_send_mail(string $to, string $subject, string $message): bool
 
     $endpoint = (string) (dotship_config()['formspree_endpoint'] ?? '');
     if ($endpoint !== '') {
-        $payload = http_build_query([
-            'email' => $to,
-            'subject' => $subject,
-            'message' => $message,
-        ]);
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $payload = http_build_query([
+                'email' => $to,
+                'subject' => $subject,
+                'message' => $message,
+            ]);
 
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
-                'content' => $payload,
-                'timeout' => 8,
-            ],
-        ]);
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
+                    'content' => $payload,
+                    'timeout' => 8,
+                ],
+            ]);
 
-        $result = @file_get_contents($endpoint, false, $context);
-        $statusLine = $http_response_header[0] ?? '';
-        if ($result !== false && preg_match('/\s2\d\d\s/', $statusLine) === 1) {
-            return true;
+            $result = @file_get_contents($endpoint, false, $context);
+            $statusLine = $http_response_header[0] ?? '';
+            if ($result !== false && preg_match('/^HTTP\/\S+\s2\d\d\b/', $statusLine) === 1) {
+                return true;
+            }
         }
     }
 
