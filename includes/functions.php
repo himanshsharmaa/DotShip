@@ -617,6 +617,30 @@ function dotship_send_mail(string $to, string $subject, string $message): bool
         return false;
     }
 
+    $endpoint = (string) (dotship_config()['formspree_endpoint'] ?? '');
+    if ($endpoint !== '') {
+        $payload = http_build_query([
+            'email' => $to,
+            'subject' => $subject,
+            'message' => $message,
+        ]);
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
+                'content' => $payload,
+                'timeout' => 8,
+            ],
+        ]);
+
+        $result = @file_get_contents($endpoint, false, $context);
+        $statusLine = $http_response_header[0] ?? '';
+        if ($result !== false && preg_match('/\s2\d\d\s/', $statusLine) === 1) {
+            return true;
+        }
+    }
+
     $headers = "From: no-reply@dotship.local\r\n";
     return (bool) @mail($to, $subject, $message, $headers);
 }

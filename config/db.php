@@ -517,6 +517,7 @@ namespace {
             'app_tagline' => 'Fast. Smart. Reliable.',
             'mongo_uri' => dotship_env('MONGODB_URI', 'mongodb://127.0.0.1:27017'),
             'mongo_db' => dotship_env('MONGODB_DB', 'dot_ship'),
+            'formspree_endpoint' => dotship_env('DOTSHIP_FORMSPREE_ENDPOINT', 'https://formspree.io/f/xwpbardz'),
             'admin_email' => dotship_env('DOTSHIP_ADMIN_EMAIL', 'admin@dotship.local'),
             'admin_password' => dotship_env('DOTSHIP_ADMIN_PASSWORD', 'Admin@1234'),
             'demo_email' => dotship_env('DOTSHIP_DEMO_EMAIL', 'demo@dotship.local'),

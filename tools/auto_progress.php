@@ -95,6 +95,12 @@ try {
 
         if ($result->getModifiedCount() > 0) {
             $updated++;
+
+            if ($next === 'transit' && !empty($doc['receiver_email']) && function_exists('dotship_create_otp') && function_exists('dotship_send_otp')) {
+                $deliveryCode = dotship_create_otp((string) ($doc['tracking_id'] ?? ''), (string) $doc['receiver_email'], 'email');
+                dotship_send_otp((string) $doc['receiver_email'], (string) $deliveryCode['code'], 'email', (string) ($doc['tracking_id'] ?? ''));
+            }
+
             // insert a notification record
             try {
                 $db->notifications->insertOne([
