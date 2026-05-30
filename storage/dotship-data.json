@@ -1,0 +1,194 @@
+{
+    "dot_ship": {
+        "users": [
+            {
+                "name": "Admin User",
+                "email": "admin@dotship.local",
+                "password": "$2y$10$UuzaPcqb7cgdtWaLy7cCtuzijUPdRj7Xh4U2XNGr/W/65x79s5iAG",
+                "role": "admin",
+                "phone": "+91 90000 00001",
+                "created_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779832627429
+                },
+                "_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "c36e4299505364e3756f0fd7"
+                }
+            },
+            {
+                "name": "Demo Customer",
+                "email": "demo@dotship.local",
+                "password": "$2y$10$XWKJoR4.JL14clvQJygoaefclLLtgpf4JrUVamBPFQM2j1vMBRbBK",
+                "role": "user",
+                "phone": "+91 90000 00002",
+                "created_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779832627430
+                },
+                "_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "ce0a86120b5de0d5b8026f35"
+                }
+            }
+        ],
+        "shipments": [
+            {
+                "tracking_id": "DSA1B2C101",
+                "sender_name": "Demo Customer",
+                "sender_phone": "+91 90000 00002",
+                "sender_address": "Bengaluru, Karnataka",
+                "receiver_name": "Aarav Mehta",
+                "receiver_phone": "+91 98888 88888",
+                "receiver_address": "Mumbai, Maharashtra",
+                "parcel_description": "Documents",
+                "parcel_weight": "1.0",
+                "parcel_type": "Documents",
+                "status": "delivered",
+                "user_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "ce0a86120b5de0d5b8026f35"
+                },
+                "created_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779832627447
+                },
+                "updated_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779832627447
+                },
+                "history": [
+                    {
+                        "status": "booked",
+                        "label": "Booked",
+                        "note": "Shipment booked on the DOT SHIP platform",
+                        "at": {
+                            "__dotship_type": "UTCDateTime",
+                            "value": 1779832627447
+                        }
+                    },
+                    {
+                        "status": "delivered",
+                        "label": "Delivered",
+                        "note": "Current logistics status update",
+                        "at": {
+                            "__dotship_type": "UTCDateTime",
+                            "value": 1779832627447
+                        }
+                    }
+                ],
+                "_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "5b28668da0b6ff5b416b370a"
+                }
+            },
+            {
+                "tracking_id": "DSD4E5F202",
+                "sender_name": "Demo Customer",
+                "sender_phone": "+91 90000 00002",
+                "sender_address": "Bengaluru, Karnataka",
+                "receiver_name": "Sara Khan",
+                "receiver_phone": "+91 97777 77777",
+                "receiver_address": "Delhi, NCR",
+                "parcel_description": "Accessories",
+                "parcel_weight": "2.3",
+                "parcel_type": "Parcel",
+                "status": "transit",
+                "user_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "ce0a86120b5de0d5b8026f35"
+                },
+                "created_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779832627447
+                },
+                "updated_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779832627447
+                },
+                "history": [
+                    {
+                        "status": "booked",
+                        "label": "Booked",
+                        "note": "Shipment booked on the DOT SHIP platform",
+                        "at": {
+                            "__dotship_type": "UTCDateTime",
+                            "value": 1779832627447
+                        }
+                    },
+                    {
+                        "status": "transit",
+                        "label": "Transit",
+                        "note": "Current logistics status update",
+                        "at": {
+                            "__dotship_type": "UTCDateTime",
+                            "value": 1779832627447
+                        }
+                    }
+                ],
+                "_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "c924a1833c46c9800adb3385"
+                }
+            },
+            {
+                "tracking_id": "DSG7H8I303",
+                "sender_name": "Demo Customer",
+                "sender_phone": "+91 90000 00002",
+                "sender_address": "Bengaluru, Karnataka",
+                "receiver_name": "Neha Sharma",
+                "receiver_phone": "+91 96666 66666",
+                "receiver_address": "Hyderabad, Telangana",
+                "parcel_description": "Gift Box",
+                "parcel_weight": "3.5",
+                "parcel_type": "Fragile",
+                "status": "delivered",
+                "user_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "ce0a86120b5de0d5b8026f35"
+                },
+                "created_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779832627454
+                },
+                "updated_at": {
+                    "__dotship_type": "UTCDateTime",
+                    "value": 1779834871945
+                },
+                "history": [
+                    {
+                        "status": "booked",
+                        "label": "Booked",
+                        "note": "Shipment booked on the DOT SHIP platform",
+                        "at": {
+                            "__dotship_type": "UTCDateTime",
+                            "value": 1779832627454
+                        }
+                    },
+                    {
+                        "status": "packed",
+                        "label": "Packed",
+                        "note": "Current logistics status update",
+                        "at": {
+                            "__dotship_type": "UTCDateTime",
+                            "value": 1779832627454
+                        }
+                    },
+                    {
+                        "status": "delivered",
+                        "label": "Delivered",
+                        "note": "Status updated by admin",
+                        "at": {
+                            "__dotship_type": "UTCDateTime",
+                            "value": 1779834871945
+                        }
+                    }
+                ],
+                "_id": {
+                    "__dotship_type": "ObjectId",
+                    "value": "5184a7c054ccffc9360f826a"
+                }
+            }
+        ]
+    }
+}

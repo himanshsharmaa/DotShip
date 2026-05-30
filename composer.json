@@ -1,0 +1,15 @@
+{
+  "name": "dotship/courier-management",
+  "description": "DOT SHIP premium courier and parcel management system",
+  "type": "project",
+  "require": {
+    "php": ">=8.0",
+    "mongodb/mongodb": "^1.18"
+  },
+  "autoload": {
+    "files": [
+      "config/db.php",
+      "includes/functions.php"
+    ]
+  }
+}
