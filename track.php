@@ -101,13 +101,13 @@ dotship_render_navbar('track');
                   </div>
                   <?php if (in_array($shipment['status'], ['packed','transit'], true)): ?>
                     <div class="mt-4">
-                      <h6 class="fw-bold">Enter OTP to confirm delivery action</h6>
+                      <h6 class="fw-bold">Enter delivery code to confirm delivery</h6>
                       <form method="post" action="<?php echo dotship_path('otp_verify.php'); ?>" class="row g-2 align-items-center mt-2">
                         <input type="hidden" name="tracking_id" value="<?php echo dotship_escape($shipment['tracking_id']); ?>">
-                        <div class="col-auto"><input type="text" name="otp_code" class="form-control" placeholder="Enter OTP"></div>
-                        <div class="col-auto"><button class="btn btn-success">Verify OTP</button></div>
+                        <div class="col-auto"><input type="text" name="otp_code" class="form-control" placeholder="Enter delivery code"></div>
+                        <div class="col-auto"><button class="btn btn-success">Verify code</button></div>
                       </form>
-                      <div class="small-muted mt-2">If you were sent an OTP by DOT SHIP, enter it here to confirm receipt and advance status.</div>
+                      <div class="small-muted mt-2">If you were sent a delivery code by DOT SHIP, enter it here to confirm receipt and advance status.</div>
                     </div>
                   <?php endif; ?>
                 </div>

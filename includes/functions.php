@@ -611,6 +611,16 @@ function dotship_notify(array $shipment, string $type = 'status_update', string 
     }
 }
 
+function dotship_send_mail(string $to, string $subject, string $message): bool
+{
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $headers = "From: no-reply@dotship.local\r\n";
+    return (bool) @mail($to, $subject, $message, $headers);
+}
+
 function dotship_generate_otp(int $length = 6): string
 {
     $min = (int) pow(10, $length - 1);
@@ -650,10 +660,7 @@ function dotship_send_otp(string $contact, string $code, string $method = 'email
 
     // Try to use mail() for email; otherwise fall back to logging
     if ($method === 'email' && filter_var($contact, FILTER_VALIDATE_EMAIL)) {
-        $subject = 'DOT SHIP verification code';
-        $headers = "From: no-reply@dotship.local\r\n";
-        // suppress warnings
-        @$sent = mail($contact, $subject, $message, $headers);
+        $sent = dotship_send_mail($contact, 'DOT SHIP delivery code', $message);
         if ($sent) {
             return true;
         }

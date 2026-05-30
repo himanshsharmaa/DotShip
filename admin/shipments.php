@@ -30,15 +30,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update') {
         $status = dotship_post('status');
         $note = dotship_post('note');
+      $receiverEmail = dotship_post('receiver_email');
 
         dotship_collection('shipments')->updateOne(
             ['_id' => new MongoDB\BSON\ObjectId($shipmentId)],
-            ['$set' => ['status' => $status, 'updated_at' => dotship_now()], '$push' => ['history' => ['status' => $status, 'label' => dotship_status_label($status), 'note' => $note !== '' ? $note : 'Status updated by admin', 'at' => dotship_now()]]]
+        ['$set' => ['status' => $status, 'receiver_email' => $receiverEmail !== '' ? $receiverEmail : null, 'updated_at' => dotship_now()], '$push' => ['history' => ['status' => $status, 'label' => dotship_status_label($status), 'note' => $note !== '' ? $note : 'Status updated by admin', 'at' => dotship_now()]]]
         );
 
         dotship_flash('success', 'Shipment status updated successfully.');
         header('Location: ' . dotship_path('admin/shipments.php'));
         exit;
+    }
+
+    if ($action === 'send_otp') {
+      $shipment = $collection->findOne(['_id' => new MongoDB\BSON\ObjectId($shipmentId)]);
+      if ($shipment) {
+        $row = $shipment->getArrayCopy();
+        $email = trim((string) ($row['receiver_email'] ?? ''));
+
+        if ($email === '') {
+          dotship_flash('warning', 'Add a receiver email first, then send the delivery code.');
+          header('Location: ' . dotship_path('admin/shipments.php'));
+          exit;
+        }
+
+        $otp = dotship_create_otp((string) $row['tracking_id'], $email, 'email');
+        dotship_send_otp($email, $otp['code'], 'email', (string) $row['tracking_id']);
+        dotship_flash('success', 'Delivery code sent to ' . $email . '.');
+        header('Location: ' . dotship_path('admin/shipments.php'));
+        exit;
+      }
     }
 
     if ($action === 'delete') {
@@ -96,6 +117,12 @@ dotship_render_flash();
               <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#editModal<?php echo (string) $row['_id']; ?>">Update</button>
               <form method="post" class="d-inline">
                 <?php echo dotship_csrf_field(); ?>
+                <input type="hidden" name="action" value="send_otp">
+                <input type="hidden" name="shipment_id" value="<?php echo dotship_escape((string) $row['_id']); ?>">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Send Delivery Code</button>
+              </form>
+              <form method="post" class="d-inline">
+                <?php echo dotship_csrf_field(); ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="shipment_id" value="<?php echo dotship_escape((string) $row['_id']); ?>">
                 <button type="submit" class="btn btn-sm btn-outline-danger" data-confirm-delete="This shipment will be removed permanently.">Delete</button>
@@ -111,7 +138,7 @@ dotship_render_flash();
         <?php foreach (['booked','packed','transit','delivered'] as $status): ?>
           <?php $modals .= '<option value="' . $status . '"' . ($row['status'] === $status ? ' selected' : '') . '>' . dotship_escape(dotship_status_label($status)) . '</option>'; ?>
         <?php endforeach; ?>
-        <?php $modals .= '</select><label for="status' . (string) $row['_id'] . '">Status</label></div><div class="col-md-6 form-floating"><input type="text" class="form-control" id="note' . (string) $row['_id'] . '" name="note" placeholder="Update note"><label for="note' . (string) $row['_id'] . '">Update note</label></div></div></div><div class="modal-footer border-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary-gradient btn-ripple px-4">Save changes</button></div></form></div></div></div>'; ?>
+        <?php $modals .= '</select><label for="status' . (string) $row['_id'] . '">Status</label></div><div class="col-md-6 form-floating"><input type="email" class="form-control" id="receiver_email' . (string) $row['_id'] . '" name="receiver_email" placeholder="Receiver email" value="' . dotship_escape((string) ($row['receiver_email'] ?? '')) . '"><label for="receiver_email' . (string) $row['_id'] . '">Receiver email</label></div><div class="col-md-12 form-floating"><input type="text" class="form-control" id="note' . (string) $row['_id'] . '" name="note" placeholder="Update note"><label for="note' . (string) $row['_id'] . '">Update note</label></div></div></div><div class="modal-footer border-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary-gradient btn-ripple px-4">Save changes</button></div></form></div></div></div>'; ?>
       <?php endforeach; ?>
       </tbody>
     </table>

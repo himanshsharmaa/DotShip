@@ -52,8 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'updated_at' => dotship_now(),
     ]);
 
+    $customerEmail = (string) ($user['email'] ?? '');
+    if ($customerEmail !== '') {
+      $mailSubject = 'DOT SHIP order confirmed';
+      $mailMessage = "Your DOT SHIP shipment has been booked successfully.\n\nTracking ID: $trackingId\nReceiver: $receiverName\nParcel: $parcelDescription\n\nYou can track the shipment anytime using the tracking page.";
+      dotship_send_mail($customerEmail, $mailSubject, $mailMessage);
+    }
+
     $_SESSION['booking_success'] = ['tracking_id' => $trackingId];
-    dotship_flash('success', 'Shipment booked successfully.');
+    dotship_flash('success', 'Shipment booked successfully. A confirmation email has been sent.');
     header('Location: ' . dotship_path('book.php'));
     exit;
 }
@@ -71,7 +78,7 @@ if ($booking):
     <div class="stat-icon bg-white"><i class="bi bi-check2-circle text-success"></i></div>
     <div>
       <h5 class="mb-1 fw-bold">Shipment booked successfully</h5>
-      <div class="small-muted mb-2">Your tracking ID is ready for real-time parcel monitoring.</div>
+      <div class="small-muted mb-2">Your confirmation mail has been sent and your tracking ID is ready for parcel monitoring.</div>
       <div class="fw-semibold">Tracking ID: <?php echo dotship_escape($booking['tracking_id']); ?></div>
     </div>
   </div>
