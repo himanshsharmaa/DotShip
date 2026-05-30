@@ -71,5 +71,48 @@ http://127.0.0.1:8000
 ## GitHub and free deployment
 
 - GitHub Pages cannot run PHP, so use GitHub only for source control.
-- For a free viva deployment, upload the project to a free PHP host.
-- See [DEPLOYMENT.md](DEPLOYMENT.md) for the exact steps.
+- For a free viva deployment, upload the project to a free PHP host that gives you a public web URL.
+
+## Quick deploy summary
+
+1. Push code to GitHub.
+2. Create a free PHP hosting account.
+3. Upload the project files to the web root.
+4. Make `storage/` writable.
+5. Open the site and use the demo login.
+
+## Live Demo Flow
+
+Use this sequence during your viva:
+
+1. Open the app home page.
+2. Log in as the demo customer.
+3. Book a shipment.
+4. Open the tracking page and show the status timeline.
+5. Log in as admin.
+6. Open the admin shipment page and advance a shipment.
+7. Send an OTP from the admin page.
+8. Go back to tracking and verify the OTP.
+9. Show that the shipment status updates automatically.
+10. Use revert/backtracking once to show admin control.
+
+### Suggested talking points
+
+- “This system is built in PHP with MongoDB-compatible storage.”
+- “The admin can manage shipment state, but the customer can also verify delivery through OTP.”
+- “The tracking page shows the live shipment timeline.”
+- “The revert action shows backtracking support for corrections.”
+
+### If you are running locally
+
+Start the site with XAMPP and open the app in your browser.
+
+```powershell
+& 'C:\xampp\php\php.exe' -S 127.0.0.1:8000
+```
+
+Then visit:
+
+```text
+http://127.0.0.1:8000
+```
