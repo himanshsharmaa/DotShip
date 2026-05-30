@@ -900,6 +900,90 @@ function dotship_verify_otp(string $trackingId, string $code): bool
     return false;
 }
 
+/**
+ * Process a delivery code attempt for a shipment.
+ * Returns an array: ['ok' => bool, 'message' => string]
+ */
+function dotship_process_delivery_code(string $trackingId, string $code): array
+{
+    $shipColl = dotship_collection('shipments');
+    $now = dotship_now();
+    $shipmentObj = $shipColl->findOne(['tracking_id' => $trackingId]);
+
+    if (!$shipmentObj) {
+        return ['ok' => false, 'message' => 'Shipment not found'];
+    }
+
+    $shipment = $shipmentObj->getArrayCopy();
+
+    if (!empty($shipment['verification_locked'])) {
+        return ['ok' => false, 'message' => 'Verification locked for this shipment'];
+    }
+
+    // Search latest unused OTPs
+    $cursor = dotship_collection('otps')->find(['tracking_id' => $trackingId, 'used' => false], ['sort' => ['created_at' => -1], 'limit' => 5]);
+    $matched = false;
+    $anyValidNotExpired = false;
+
+    foreach ($cursor as $docObj) {
+        $doc = $docObj->getArrayCopy();
+        $expires = $doc['expires_at'] ?? null;
+        if ($expires instanceof MongoDB\BSON\UTCDateTime) {
+            if ($expires->toDateTime()->getTimestamp() < (int) floor(microtime(true))) {
+                // expired
+                continue;
+            }
+            $anyValidNotExpired = true;
+        }
+
+        if (isset($doc['code_hash']) && password_verify($code, (string) $doc['code_hash'])) {
+            // mark OTP used
+            try {
+                dotship_collection('otps')->updateOne(['_id' => $doc['_id']], ['$set' => ['used' => true, 'used_at' => $now]]);
+            } catch (Throwable) {
+            }
+
+            // mark shipment delivered
+            try {
+                $shipColl->updateOne(['_id' => $shipment['_id']], ['$set' => ['status' => 'delivered', 'delivered_at' => $now, 'delivery_verified' => true, 'updated_at' => $now], '$push' => ['history' => ['status' => 'delivered', 'label' => dotship_status_label('delivered'), 'note' => 'Verified via delivery code', 'at' => $now]]]);
+            } catch (Throwable) {
+            }
+
+            // send success emails and notify
+            dotship_send_delivery_success_emails($shipment);
+            dotship_notify($shipment, 'delivered', 'Delivery confirmed via code');
+
+            return ['ok' => true, 'message' => 'Delivery code verified. Shipment marked delivered'];
+        }
+    }
+
+    // No match
+    try {
+        $shipColl->updateOne(['_id' => $shipment['_id']], ['$inc' => ['failed_attempts' => 1], '$set' => ['updated_at' => $now]]);
+    } catch (Throwable) {
+    }
+
+    // re-fetch to check failed attempts
+    $updated = $shipColl->findOne(['_id' => $shipment['_id']]);
+    $updatedArr = $updated ? $updated->getArrayCopy() : $shipment;
+    $fails = (int) ($updatedArr['failed_attempts'] ?? 0);
+
+    if ($fails >= 3) {
+        try {
+            $shipColl->updateOne(['_id' => $shipment['_id']], ['$set' => ['verification_locked' => true, 'status' => 'verification_failed', 'updated_at' => $now], '$push' => ['history' => ['status' => 'verification_failed', 'label' => dotship_status_label('verification_failed'), 'note' => 'Too many failed delivery code attempts', 'at' => $now]]]);
+        } catch (Throwable) {
+        }
+        dotship_notify($shipment, 'verification_failed', 'Shipment locked after multiple failed attempts');
+        return ['ok' => false, 'message' => 'Too many failed attempts. Verification locked'];
+    }
+
+    if (!$anyValidNotExpired) {
+        return ['ok' => false, 'message' => 'Delivery code expired'];
+    }
+
+    return ['ok' => false, 'message' => 'Invalid delivery code'];
+}
+
 function dotship_render_flash_toast(string $title = 'DOT SHIP'): void
 {
     $flash = dotship_flash('');

@@ -34,6 +34,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $existing = dotship_collection('shipments')->findOne(['_id' => new MongoDB\BSON\ObjectId($shipmentId)]);
         $existingRow = $existing ? $existing->getArrayCopy() : null;
 
+      // Prevent admin from directly marking shipments as delivered.
+      if ($status === 'delivered') {
+        dotship_flash('danger', 'Delivered status can only be set via delivery code verification.');
+        header('Location: ' . dotship_path('admin/shipments.php'));
+        exit;
+      }
+
         dotship_collection('shipments')->updateOne(
             ['_id' => new MongoDB\BSON\ObjectId($shipmentId)],
             ['$set' => ['status' => $status, 'receiver_email' => $receiverEmail !== '' ? $receiverEmail : null, 'updated_at' => dotship_now()], '$push' => ['history' => ['status' => $status, 'label' => dotship_status_label($status), 'note' => $note !== '' ? $note : 'Status updated by admin', 'at' => dotship_now()]]]
@@ -47,7 +54,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $trackingId = (string) ($existingRow['tracking_id'] ?? '');
                 $otp = dotship_create_otp($trackingId, $targetEmail, 'email');
                 dotship_send_otp($targetEmail, $otp['code'], 'email', $trackingId);
-                dotship_notify($existingRow, 'delivery_code_sent', 'Delivery code sent automatically to ' . $targetEmail);
+              // update shipment metadata for the delivery code lifecycle
+              try {
+                dotship_collection('shipments')->updateOne(['_id' => $existingRow['_id']], ['$set' => [
+                  'code_generated_at' => dotship_now(),
+                  'expiry_time' => new MongoDB\BSON\UTCDateTime((int) round((microtime(true) + 1800) * 1000)),
+                  'failed_attempts' => 0,
+                  'verification_locked' => false,
+                  'delivery_verified' => false,
+                ]]);
+              } catch (Throwable) {
+              }
+
+              dotship_notify($existingRow, 'delivery_code_sent', 'Delivery code sent automatically to ' . $targetEmail);
             }
         }
 
