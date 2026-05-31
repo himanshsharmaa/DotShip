@@ -13,7 +13,7 @@ try {
     $shipColl = dotship_collection('shipments');
     $otpColl = dotship_collection('otps');
 } catch (Throwable $e) {
-    fail('Cannot access MongoDB/compat store: ' . $e->getMessage());
+    fail('Cannot access SQLite-backed store: ' . $e->getMessage());
 }
 
 // Step 1: create a test shipment

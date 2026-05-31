@@ -132,22 +132,20 @@ namespace DotShipMongoCompat {
         public function insertOne(array $document): InsertOneResult
         {
             $document['_id'] ??= new ObjectId();
-            $this->appendDocuments([$document]);
+            dotship_sql_write_document($this->name, $document);
             return new InsertOneResult($document['_id']);
         }
 
         public function insertMany(array $documents): InsertManyResult
         {
             $insertedIds = [];
-            $batch = [];
 
             foreach ($documents as $document) {
                 $document['_id'] ??= new ObjectId();
                 $insertedIds[] = $document['_id'];
-                $batch[] = $document;
+                dotship_sql_write_document($this->name, $document);
             }
 
-            $this->appendDocuments($batch);
             return new InsertManyResult($insertedIds);
         }
 
@@ -175,21 +173,18 @@ namespace DotShipMongoCompat {
 
         public function updateOne(array $filter, array $update): UpdateResult
         {
-            $data = dotship_mongo_store_load();
-            $collection = &$data[$this->database][$this->name];
-            $collection = is_array($collection) ? $collection : [];
+            $collection = dotship_sql_read_collection($this->name);
 
             $matched = 0;
             $modified = 0;
 
             foreach ($collection as $index => $document) {
-                $rehydrated = dotship_mongo_rehydrate($document);
-                if (!dotship_mongo_document_matches($rehydrated, $filter)) {
+                if (!dotship_mongo_document_matches($document, $filter)) {
                     continue;
                 }
 
                 $matched++;
-                $updated = $rehydrated;
+                $updated = $document;
 
                 foreach ($update['$set'] ?? [] as $field => $value) {
                     $updated[$field] = $value;
@@ -204,68 +199,48 @@ namespace DotShipMongoCompat {
                     $updated[$field] = $current;
                 }
 
-                if ($updated != $rehydrated) {
+                foreach ($update['$inc'] ?? [] as $field => $value) {
+                    $updated[$field] = (int) ($updated[$field] ?? 0) + (int) $value;
+                }
+
+                if ($updated != $document) {
                     $modified++;
                 }
 
-                $collection[$index] = dotship_mongo_normalize($updated);
+                dotship_sql_write_document($this->name, $updated);
                 break;
             }
 
-            dotship_mongo_store_save($data);
             return new UpdateResult($matched, $modified);
         }
 
         public function deleteOne(array $filter): DeleteResult
         {
-            $data = dotship_mongo_store_load();
-            $collection = &$data[$this->database][$this->name];
-            $collection = is_array($collection) ? $collection : [];
+            $collection = dotship_sql_read_collection($this->name);
 
             $deleted = 0;
 
             foreach ($collection as $index => $document) {
-                $rehydrated = dotship_mongo_rehydrate($document);
-                if (!dotship_mongo_document_matches($rehydrated, $filter)) {
+                if (!dotship_mongo_document_matches($document, $filter)) {
                     continue;
                 }
 
-                unset($collection[$index]);
                 $deleted = 1;
+                dotship_sql_delete_document($this->name, (string) ($document['_id'] ?? ''));
                 break;
             }
 
-            $collection = array_values($collection);
-            dotship_mongo_store_save($data);
             return new DeleteResult($deleted);
-        }
-
-        private function appendDocuments(array $documents): void
-        {
-            if ($documents === []) {
-                return;
-            }
-
-            $data = dotship_mongo_store_load();
-            $data[$this->database][$this->name] = $data[$this->database][$this->name] ?? [];
-
-            foreach ($documents as $document) {
-                $data[$this->database][$this->name][] = dotship_mongo_normalize($document);
-            }
-
-            dotship_mongo_store_save($data);
         }
 
         private function readFiltered(array $filter): array
         {
-            $data = dotship_mongo_store_load();
-            $collection = $data[$this->database][$this->name] ?? [];
+            $collection = dotship_sql_read_collection($this->name);
             $matched = [];
 
             foreach ($collection as $document) {
-                $rehydrated = dotship_mongo_rehydrate($document);
-                if (dotship_mongo_document_matches($rehydrated, $filter)) {
-                    $matched[] = $rehydrated;
+                if (dotship_mongo_document_matches($document, $filter)) {
+                    $matched[] = $document;
                 }
             }
 
@@ -344,32 +319,144 @@ namespace {
         class_alias(\DotShipMongoCompat\DeleteResult::class, \MongoDB\DeleteResult::class);
     }
 
-    function dotship_mongo_store_path(): string
+    function dotship_sql_store_path(): string
     {
-        return dirname(__DIR__) . '/storage/dotship-data.json';
-    }
-
-    function dotship_mongo_store_load(): array
-    {
-        $path = dotship_mongo_store_path();
-        if (!is_file($path)) {
-            return [];
+        $configured = (string) dotship_env('DOTSHIP_SQLITE_PATH', '');
+        if ($configured !== '') {
+            return $configured;
         }
 
-        $decoded = json_decode((string) file_get_contents($path), true);
-        return is_array($decoded) ? $decoded : [];
+        return dirname(__DIR__) . '/storage/dotship.sqlite';
     }
 
-    function dotship_mongo_store_save(array $data): void
+    function dotship_sql_pdo(): \PDO
     {
-        $path = dotship_mongo_store_path();
-        $directory = dirname($path);
+        static $pdo = null;
 
+        if ($pdo instanceof \PDO) {
+            return $pdo;
+        }
+
+        $path = dotship_sql_store_path();
+        $directory = dirname($path);
         if (!is_dir($directory)) {
             mkdir($directory, 0777, true);
         }
 
-        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
+        $pdo = new \PDO('sqlite:' . $path);
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+
+        $pdo->exec('CREATE TABLE IF NOT EXISTS documents (collection TEXT NOT NULL, document_id TEXT NOT NULL, data TEXT NOT NULL, created_ms INTEGER NOT NULL, updated_ms INTEGER NOT NULL, PRIMARY KEY(collection, document_id))');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_documents_collection ON documents(collection)');
+
+        return $pdo;
+    }
+
+    function dotship_sql_store_load(): array
+    {
+        $pdo = dotship_sql_pdo();
+        $rows = $pdo->query('SELECT collection, data FROM documents ORDER BY rowid ASC')->fetchAll();
+        $data = [];
+
+        foreach ($rows as $row) {
+            $collection = (string) ($row['collection'] ?? '');
+            $decoded = json_decode((string) ($row['data'] ?? ''), true);
+            if ($collection === '' || !is_array($decoded)) {
+                continue;
+            }
+
+            $data[$collection][] = $decoded;
+        }
+
+        return $data;
+    }
+
+    function dotship_sql_store_save(array $data): void
+    {
+        $pdo = dotship_sql_pdo();
+        $pdo->beginTransaction();
+        try {
+            $pdo->exec('DELETE FROM documents');
+
+            foreach ($data as $collection => $documents) {
+                if (!is_array($documents)) {
+                    continue;
+                }
+
+                foreach ($documents as $document) {
+                    if (!is_array($document)) {
+                        continue;
+                    }
+
+                    dotship_sql_write_document((string) $collection, $document, $pdo);
+                }
+            }
+
+            $pdo->commit();
+        } catch (Throwable $throwable) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $throwable;
+        }
+    }
+
+    function dotship_sql_read_collection(string $collection): array
+    {
+        $pdo = dotship_sql_pdo();
+        $statement = $pdo->prepare('SELECT data FROM documents WHERE collection = :collection ORDER BY rowid ASC');
+        $statement->execute([':collection' => $collection]);
+
+        $documents = [];
+        while ($row = $statement->fetch()) {
+            $decoded = json_decode((string) ($row['data'] ?? ''), true);
+            if (is_array($decoded)) {
+                $documents[] = dotship_mongo_rehydrate($decoded);
+            }
+        }
+
+        return $documents;
+    }
+
+    function dotship_sql_write_document(string $collection, array $document, ?\PDO $pdo = null): void
+    {
+        $pdo ??= dotship_sql_pdo();
+        $document = dotship_mongo_normalize($document);
+        $id = (string) ($document['_id']['value'] ?? $document['_id'] ?? '');
+        if ($id === '' && isset($document['_id'])) {
+            $id = (string) $document['_id'];
+        }
+
+        if ($id === '') {
+            $id = (string) new \DotShipMongoCompat\ObjectId();
+            $document['_id'] = ['__dotship_type' => 'ObjectId', 'value' => $id];
+        }
+
+        $payload = json_encode($document, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $nowMs = (new \DotShipMongoCompat\UTCDateTime())->getMilliseconds();
+        $statement = $pdo->prepare('INSERT INTO documents (collection, document_id, data, created_ms, updated_ms) VALUES (:collection, :document_id, :data, :created_ms, :updated_ms) ON CONFLICT(collection, document_id) DO UPDATE SET data = excluded.data, updated_ms = excluded.updated_ms');
+        $statement->execute([
+            ':collection' => $collection,
+            ':document_id' => $id,
+            ':data' => $payload !== false ? $payload : '{}',
+            ':created_ms' => $nowMs,
+            ':updated_ms' => $nowMs,
+        ]);
+    }
+
+    function dotship_sql_delete_document(string $collection, string $documentId): void
+    {
+        if ($documentId === '') {
+            return;
+        }
+
+        $pdo = dotship_sql_pdo();
+        $statement = $pdo->prepare('DELETE FROM documents WHERE collection = :collection AND document_id = :document_id');
+        $statement->execute([
+            ':collection' => $collection,
+            ':document_id' => $documentId,
+        ]);
     }
 
     function dotship_mongo_normalize(mixed $value): mixed
@@ -515,8 +602,7 @@ namespace {
         $config = [
             'app_name' => 'DOT SHIP',
             'app_tagline' => 'Fast. Smart. Reliable.',
-            'mongo_uri' => dotship_env('MONGODB_URI', 'mongodb://127.0.0.1:27017'),
-            'mongo_db' => dotship_env('MONGODB_DB', 'dot_ship'),
+            'sqlite_path' => dotship_sql_store_path(),
             'formspree_endpoint' => dotship_env('DOTSHIP_FORMSPREE_ENDPOINT', 'https://formspree.io/f/xwpbardz'),
             'admin_email' => dotship_env('DOTSHIP_ADMIN_EMAIL', 'admin@dotship.local'),
             'admin_password' => dotship_env('DOTSHIP_ADMIN_PASSWORD', 'Admin@1234'),
@@ -528,29 +614,29 @@ namespace {
         return $config;
     }
 
-    function dotship_client(): \MongoDB\Client
+    function dotship_client(): \DotShipMongoCompat\Client
     {
         static $client = null;
 
         if ($client === null) {
-            $client = new \MongoDB\Client(dotship_config()['mongo_uri']);
+            $client = new \DotShipMongoCompat\Client('sqlite:' . dotship_config()['sqlite_path']);
         }
 
         return $client;
     }
 
-    function dotship_db(): \MongoDB\Database
+    function dotship_db(): \DotShipMongoCompat\Database
     {
         static $db = null;
 
         if ($db === null) {
-            $db = dotship_client()->selectDatabase(dotship_config()['mongo_db']);
+            $db = dotship_client()->selectDatabase('dot_ship');
         }
 
         return $db;
     }
 
-    function dotship_collection(string $name): \MongoDB\Collection
+    function dotship_collection(string $name): \DotShipMongoCompat\Collection
     {
         return dotship_db()->selectCollection($name);
     }

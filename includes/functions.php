@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use MongoDB\BSON\UTCDateTime;
-use MongoDB\BSON\ObjectId;
+use DotShipMongoCompat\UTCDateTime;
+use DotShipMongoCompat\ObjectId;
 
 function dotship_path(string $path = ''): string
 {
@@ -830,7 +830,7 @@ function dotship_create_otp(string $trackingId, string $contact, string $method 
     $code = dotship_generate_otp();
     $hashed = password_hash($code, PASSWORD_DEFAULT);
     $now = dotship_now();
-    $expires = new MongoDB\BSON\UTCDateTime((int) round((microtime(true) + $ttlSeconds) * 1000));
+    $expires = new UTCDateTime((int) round((microtime(true) + $ttlSeconds) * 1000));
 
     $doc = [
         'tracking_id' => $trackingId,
@@ -888,7 +888,7 @@ function dotship_verify_otp(string $trackingId, string $code): bool
     foreach ($cursor as $docObj) {
         $doc = $docObj->getArrayCopy();
         $expires = $doc['expires_at'] ?? null;
-        if ($expires instanceof MongoDB\BSON\UTCDateTime) {
+        if ($expires instanceof UTCDateTime) {
             $expiresMs = $expires->toDateTime()->format('U') * 1000 + (int) (($expires->toDateTime()->format('u')) / 1000);
             if ($expiresMs < (int) round(microtime(true) * 1000)) {
                 continue;
@@ -942,7 +942,7 @@ function dotship_process_delivery_code(string $trackingId, string $code): array
     foreach ($cursor as $docObj) {
         $doc = $docObj->getArrayCopy();
         $expires = $doc['expires_at'] ?? null;
-        if ($expires instanceof MongoDB\BSON\UTCDateTime) {
+        if ($expires instanceof UTCDateTime) {
             if ($expires->toDateTime()->getTimestamp() < (int) floor(microtime(true))) {
                 // expired
                 continue;

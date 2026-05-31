@@ -1,19 +1,10 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
-use MongoDB\BSON\UTCDateTime;
+use DotShipMongoCompat\UTCDateTime;
 
-$uri = getenv('MONGODB_URI') ?: 'mongodb://127.0.0.1:27017';
-$dbName = getenv('MONGODB_DB') ?: 'dot_ship';
-
-try {
-    $client = new MongoDB\Client($uri);
-    $db = $client->selectDatabase($dbName);
-    $shipments = $db->shipments;
-} catch (MongoDB\Driver\Exception\ConnectionException $e) {
-    echo "MongoDB connection failed. Start MongoDB or update MONGODB_URI.\n";
-    echo $e->getMessage() . PHP_EOL;
-    exit(1);
+$shipments = dotship_collection('shipments');
+$notifications = dotship_collection('notifications');
 }
 
 // Configuration: time (seconds) to wait before advancing to next status
@@ -108,14 +99,14 @@ try {
                 $deliveryCode = dotship_create_otp($tracking, (string) $doc['receiver_email'], 'email', 1800);
                 dotship_send_otp((string) $doc['receiver_email'], (string) $deliveryCode['code'], 'email', $tracking);
                 try {
-                    $db->shipments->updateOne(['_id' => $doc['_id']], ['$set' => ['code_generated_at' => new UTCDateTime(), 'expiry_time' => new UTCDateTime((int) round((microtime(true) + 1800) * 1000)), 'failed_attempts' => 0, 'verification_locked' => false]]);
+                    $shipments->updateOne(['_id' => $doc['_id']], ['$set' => ['code_generated_at' => new UTCDateTime(), 'expiry_time' => new UTCDateTime((int) round((microtime(true) + 1800) * 1000)), 'failed_attempts' => 0, 'verification_locked' => false]]);
                 } catch (Throwable) {
                 }
             }
 
             // insert a notification record
             try {
-                $db->notifications->insertOne([
+                $notifications->insertOne([
                     'shipment_id' => $doc['_id'],
                     'tracking_id' => $doc['tracking_id'] ?? null,
                     'type' => 'status_update',
@@ -134,7 +125,7 @@ try {
 
     echo "Done. Updated: $updated shipments\n";
 } catch (Throwable $e) {
-    echo "MongoDB operation failed. Make sure MongoDB is running and the URI is correct.\n";
+    echo "Operation failed.\n";
     echo $e->getMessage() . PHP_EOL;
     exit(1);
 }

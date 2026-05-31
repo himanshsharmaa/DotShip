@@ -15,9 +15,9 @@ $filter = ['user_id' => $user['_id']];
 if ($query !== '') {
   $safeQuery = preg_quote($query, '/');
     $filter['$or'] = [
-    ['tracking_id' => new MongoDB\BSON\Regex($safeQuery, 'i')],
-    ['receiver_name' => new MongoDB\BSON\Regex($safeQuery, 'i')],
-    ['status' => new MongoDB\BSON\Regex($safeQuery, 'i')],
+    ['tracking_id' => new DotShipMongoCompat\Regex($safeQuery, 'i')],
+    ['receiver_name' => new DotShipMongoCompat\Regex($safeQuery, 'i')],
+    ['status' => new DotShipMongoCompat\Regex($safeQuery, 'i')],
     ];
 }
 

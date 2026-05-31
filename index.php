@@ -77,7 +77,7 @@ dotship_render_navbar('home');
           <div class="feature-card p-4 h-100">
             <div class="feature-icon mb-3"><i class="bi bi-shield-lock-fill"></i></div>
             <h5 class="fw-bold">Secure Delivery</h5>
-            <p class="mb-0">Session protection, password hashing, CSRF checks, and safe MongoDB handling keep data guarded.</p>
+            <p class="mb-0">Session protection, password hashing, CSRF checks, and SQLite-backed storage keep data guarded.</p>
           </div>
         </div>
         <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">

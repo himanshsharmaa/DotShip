@@ -3,8 +3,7 @@
   "description": "DOT SHIP premium courier and parcel management system",
   "type": "project",
   "require": {
-    "php": ">=8.0",
-    "mongodb/mongodb": "^1.18"
+    "php": ">=8.0"
   },
   "autoload": {
     "files": [

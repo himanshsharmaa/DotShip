@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $advanceAll = isset($_POST['advance_all']);
 
     if ($advanceId !== '') {
-        $shipment = dotship_collection('shipments')->findOne(['_id' => new MongoDB\BSON\ObjectId($advanceId)]);
+        $shipment = dotship_collection('shipments')->findOne(['_id' => new DotShipMongoCompat\ObjectId($advanceId)]);
         if ($shipment) {
             $s = $shipment->getArrayCopy();
             $current = $s['status'] ?? 'booked';
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($sendOtpId !== '') {
-        $shipment = dotship_collection('shipments')->findOne(['_id' => new MongoDB\BSON\ObjectId($sendOtpId)]);
+        $shipment = dotship_collection('shipments')->findOne(['_id' => new DotShipMongoCompat\ObjectId($sendOtpId)]);
         if ($shipment) {
             $s = $shipment->getArrayCopy();
             $contact = $s['receiver_email'] ?? $s['receiver_phone'] ?? '';
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($revertId !== '') {
-        $shipment = dotship_collection('shipments')->findOne(['_id' => new MongoDB\BSON\ObjectId($revertId)]);
+        $shipment = dotship_collection('shipments')->findOne(['_id' => new DotShipMongoCompat\ObjectId($revertId)]);
         if ($shipment) {
             $s = $shipment->getArrayCopy();
             $history = $s['history'] ?? [];

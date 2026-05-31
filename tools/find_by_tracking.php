@@ -1,9 +1,10 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
+
 $tracking = $argv[1] ?? 'DSA1B2C101';
 try {
-    $client = new MongoDB\Client(getenv('MONGODB_URI'));
-    $doc = $client->selectDatabase('dot_ship')->shipments->findOne(['tracking_id'=>$tracking]);
+    dotship_bootstrap();
+    $doc = dotship_collection('shipments')->findOne(['tracking_id' => $tracking]);
     if ($doc) {
         echo "Found: \n";
         print_r($doc);

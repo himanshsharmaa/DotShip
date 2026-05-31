@@ -1,6 +1,6 @@
 # DOT SHIP
 
-A premium web-based courier and parcel management system built with PHP 8+, MongoDB, HTML5, CSS3, and Bootstrap 5.
+A premium web-based courier and parcel management system built with PHP 8+, SQLite, HTML5, CSS3, and Bootstrap 5.
 
 ## Folder Structure
 
@@ -27,9 +27,9 @@ DOT SHIP/
 ## Requirements
 
 - PHP 8.0 or later
-- MongoDB server running locally or remotely for the CLI tools
+- SQLite support via the bundled PHP PDO driver
 - Composer
-- PHP MongoDB extension enabled for real MongoDB usage; the web app can also run with the built-in JSON-compatible fallback storage
+- No external database server is required for the demo; the app uses SQLite storage in `storage/dotship.sqlite`
 
 ## Setup
 
@@ -39,11 +39,11 @@ DOT SHIP/
 composer install
 ```
 
-2. Copy `.env.example` to `.env` if you want custom values and adjust the MongoDB settings.
+2. Copy `.env.example` to `.env` if you want custom values and adjust the app settings.
 
-3. For local MongoDB mode, make sure MongoDB is running and the URI in `MONGODB_URI` is reachable.
+3. If you want to use a custom SQLite file, set `DOTSHIP_SQLITE_PATH`.
 
-4. If you only want to run the website for a free demo, the app can work without a local MongoDB server using the fallback storage already included in the project.
+4. The default demo works out of the box with no database server setup.
 
 5. Start the project from the workspace root.
 
@@ -98,7 +98,7 @@ Use this sequence during your viva:
 
 ### Suggested talking points
 
-- “This system is built in PHP with MongoDB-compatible storage.”
+- “This system is built in PHP with SQLite-backed storage.”
 - “The admin can manage shipment state, but the customer can also verify delivery through OTP.”
 - “The tracking page shows the live shipment timeline.”
 - “The revert action shows backtracking support for corrections.”
