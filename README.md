@@ -68,6 +68,38 @@ http://127.0.0.1:8000
 - Tracking is available publicly from the landing page.
 - Admin routes live under `admin/`.
 
+## Project Flow Chart
+
+```mermaid
+flowchart TD
+	A[Visitor opens DOT SHIP] --> B[Home page]
+	B --> C{User action}
+	C -->|Track shipment| D[Track page]
+	C -->|Login| E[Customer or admin login]
+	C -->|Book shipment| F[Shipment booking form]
+
+	E --> G{Role}
+	G -->|Customer| H[Dashboard / shipments / track]
+	G -->|Admin| I[Admin dashboard / shipments management]
+
+	F --> J[Save shipment to SQLite]
+	J --> K[Generate tracking ID]
+	K --> L[Shipment appears in tracking and admin views]
+
+	D --> M[Enter tracking ID]
+	M --> N[View shipment timeline and status]
+
+	I --> O[Advance status or reissue OTP]
+	O --> P[OTP sent for delivery verification]
+	P --> Q[Customer enters delivery code]
+	Q --> R{Code valid?}
+	R -->|Yes| S[Mark shipment delivered]
+	R -->|No| T[Increase failed attempts]
+	T --> U{Three failed attempts?}
+	U -->|Yes| V[Lock verification]
+	U -->|No| Q
+```
+
 ## GitHub and free deployment
 
 - GitHub Pages cannot run PHP, so use GitHub only for source control.
