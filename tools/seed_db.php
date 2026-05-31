@@ -16,16 +16,19 @@ if (!is_array($json)) {
     exit(1);
 }
 
+// Support both flat and nested (dot_ship) JSON formats
+$data = isset($json['dot_ship']) && is_array($json['dot_ship']) ? $json['dot_ship'] : $json;
+
 try {
     $client = new MongoDB\Client($uri);
     $db = $client->selectDatabase($dbName);
-    if (!empty($json['users'])) {
-        foreach ($json['users'] as $u) {
+    if (!empty($data['users'])) {
+        foreach ($data['users'] as $u) {
             $db->users->replaceOne(['email' => $u['email']], $u, ['upsert' => true]);
         }
     }
-    if (!empty($json['shipments'])) {
-        foreach ($json['shipments'] as $s) {
+    if (!empty($data['shipments'])) {
+        foreach ($data['shipments'] as $s) {
             // ensure ObjectId for _id if string
             if (isset($s['_id']) && is_string($s['_id'])) {
                 // leave as-is; Mongo will create _id if absent
