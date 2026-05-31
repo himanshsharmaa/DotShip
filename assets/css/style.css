@@ -17,6 +17,8 @@
   --dotship-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   --dotship-shadow-lg: 0 20px 50px rgba(11, 31, 58, 0.16);
   --dotship-transition: 0.3s ease;
+  --motion-ease: cubic-bezier(.16,.84,.44,1);
+  --framer-scale: 1.03;
 }
 
 * {
@@ -243,6 +245,33 @@ img {
   margin: 0 auto;
   border-radius: 26px;
   padding: 34px;
+}
+
+/* Framer-like motion helpers */
+.motion-fade-up {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 420ms var(--motion-ease), opacity 420ms var(--motion-ease);
+}
+.motion-fade-up.is-in { transform: translateY(0); opacity: 1; }
+
+.motion-pop {
+  transform: scale(0.98);
+  opacity: 0;
+  transition: transform 360ms var(--motion-ease), opacity 360ms var(--motion-ease), box-shadow 360ms var(--motion-ease);
+}
+.motion-pop.is-in { transform: scale(var(--framer-scale)); opacity: 1; box-shadow: var(--dotship-shadow-lg); }
+
+/* Smooth hover transform combined with subtle 3D tilt */
+.card-tilt {
+  transform-origin: center;
+  transition: transform 320ms var(--motion-ease), box-shadow 320ms var(--motion-ease);
+}
+.card-tilt:hover { transform: translateY(-6px) rotateX(2deg) translateZ(4px); box-shadow: 0 30px 70px rgba(11,31,58,0.22); }
+
+/* Hero floating variant tuned for Framer feel */
+.floating {
+  animation: float 6s var(--motion-ease) infinite;
 }
 
 .hero-title {

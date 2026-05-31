@@ -96,4 +96,38 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  // Framer-like intersection entrance animations
+  const inView = (el) => {
+    el.classList.add('is-in');
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        inView(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.motion-fade-up, .motion-pop').forEach((el) => {
+    observer.observe(el);
+  });
+
+  // Lightweight tilt on hover for .card-tilt elements
+  document.querySelectorAll('.card-tilt').forEach((card) => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
+      const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
+      const rotX = (y * 6).toFixed(2);
+      const rotY = (x * -6).toFixed(2);
+      card.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(6px)`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+    });
+  });
 });

@@ -8,7 +8,7 @@ dotship_render_navbar('home');
   <section class="hero-wrap">
     <div class="container">
       <div class="row align-items-center g-5">
-        <div class="col-lg-6" data-aos="fade-up">
+        <div class="col-lg-6 motion-fade-up" data-aos="fade-up">
           <div class="section-kicker mb-3"><i class="bi bi-send-check"></i> Premium logistics platform</div>
           <h1 class="hero-title text-navy mb-4">DOT SHIP</h1>
           <p class="display-6 fw-semibold mb-3 text-navy">Fast. Smart. Reliable.</p>
@@ -32,8 +32,8 @@ dotship_render_navbar('home');
             </div>
           </div>
         </div>
-        <div class="col-lg-6" data-aos="fade-left">
-          <div class="hero-panel floating">
+        <div class="col-lg-6 motion-pop" data-aos="fade-left">
+          <div class="hero-panel floating card-tilt">
             <div class="d-flex justify-content-between align-items-center mb-4 text-white">
               <div>
                 <div class="hero-badge-wrap mb-2"><span class="hero-badge"><i class="bi bi-broadcast-pin"></i> Live network sync</span></div>
@@ -60,28 +60,28 @@ dotship_render_navbar('home');
       </div>
       <div class="row g-4">
         <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="50">
-          <div class="feature-card p-4 h-100">
+          <div class="feature-card p-4 h-100 motion-fade-up card-tilt">
             <div class="feature-icon mb-3"><i class="bi bi-lightning-charge-fill"></i></div>
             <h5 class="fw-bold">Fast Booking</h5>
             <p class="mb-0">Book shipments in a clean guided flow with validation and instant tracking ID generation.</p>
           </div>
         </div>
         <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
-          <div class="feature-card p-4 h-100">
+          <div class="feature-card p-4 h-100 motion-fade-up card-tilt">
             <div class="feature-icon mb-3"><i class="bi bi-geo-alt-fill"></i></div>
             <h5 class="fw-bold">Live Tracking</h5>
             <p class="mb-0">Track a parcel using a premium search experience with a progress timeline and status stages.</p>
           </div>
         </div>
         <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="150">
-          <div class="feature-card p-4 h-100">
+          <div class="feature-card p-4 h-100 motion-fade-up card-tilt">
             <div class="feature-icon mb-3"><i class="bi bi-shield-lock-fill"></i></div>
             <h5 class="fw-bold">Secure Delivery</h5>
             <p class="mb-0">Session protection, password hashing, CSRF checks, and SQLite-backed storage keep data guarded.</p>
           </div>
         </div>
         <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
-          <div class="feature-card p-4 h-100">
+          <div class="feature-card p-4 h-100 motion-fade-up card-tilt">
             <div class="feature-icon mb-3"><i class="bi bi-graph-up-arrow"></i></div>
             <h5 class="fw-bold">Smart Dashboard</h5>
             <p class="mb-0">Admin and user dashboards show operational counts, charts, and recent shipment activity.</p>
@@ -130,23 +130,23 @@ dotship_render_navbar('home');
         <p class="section-subtitle mx-auto">A refined timeline gives users a quick understanding of where the parcel is in the courier chain.</p>
       </div>
       <div class="timeline-card p-4 p-lg-5">
-        <div class="timeline-track">
-          <div class="timeline-item" data-aos="fade-up">
+          <div class="timeline-track">
+          <div class="timeline-item motion-fade-up" data-aos="fade-up">
             <div class="timeline-marker is-done"><i class="bi bi-clipboard-check"></i></div>
             <h5 class="fw-bold mb-1">Book</h5>
             <p class="mb-0 small-muted">Create shipment details with sender, receiver, and parcel information.</p>
           </div>
-          <div class="timeline-item" data-aos="fade-up" data-aos-delay="80">
+          <div class="timeline-item motion-fade-up" data-aos="fade-up" data-aos-delay="80">
             <div class="timeline-marker is-done"><i class="bi bi-box-seam"></i></div>
             <h5 class="fw-bold mb-1">Dispatch</h5>
             <p class="mb-0 small-muted">Parcel moves into the handling queue for packaging and routing.</p>
           </div>
-          <div class="timeline-item" data-aos="fade-up" data-aos-delay="120">
+          <div class="timeline-item motion-fade-up" data-aos="fade-up" data-aos-delay="120">
             <div class="timeline-marker is-active"><i class="bi bi-truck"></i></div>
             <h5 class="fw-bold mb-1">Transit</h5>
             <p class="mb-0 small-muted">Track movement through a smooth and visible logistics pipeline.</p>
           </div>
-          <div class="timeline-item mb-0" data-aos="fade-up" data-aos-delay="160">
+          <div class="timeline-item mb-0 motion-fade-up" data-aos="fade-up" data-aos-delay="160">
             <div class="timeline-marker"><i class="bi bi-check2-circle"></i></div>
             <h5 class="fw-bold mb-1">Delivered</h5>
             <p class="mb-0 small-muted">The shipment reaches the receiver and the status is finalized.</p>
