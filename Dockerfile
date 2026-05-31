@@ -17,6 +17,16 @@ RUN set -eux; \
   done; \
   a2enmod mpm_prefork || true
 
+# Diagnostic step: show enabled/available modules and apache test output (temporary)
+RUN echo "--- DIAGNOSTIC: /etc/apache2/mods-enabled ---" \
+  && ls -la /etc/apache2/mods-enabled || true \
+  && echo "--- DIAGNOSTIC: /etc/apache2/mods-available ---" \
+  && ls -la /etc/apache2/mods-available || true \
+  && echo "--- DIAGNOSTIC: apachectl -M ---" \
+  && apachectl -M 2>&1 || true \
+  && echo "--- DIAGNOSTIC: apachectl -t ---" \
+  && apachectl -t 2>&1 || true
+
 # Install composer (copy from official composer image)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
