@@ -94,6 +94,13 @@ try {
     fail('Failed to reissue OTP: ' . $e->getMessage());
 }
 
+// Old code should no longer work after reissue
+$oldResult = dotship_process_delivery_code($tracking, $code);
+if ($oldResult['ok'] ?? false) {
+    fail('Old OTP stayed valid after reissue');
+}
+ok('Old delivery code was invalidated after reissue');
+
 // Step 6: verify with correct code
 $result = dotship_process_delivery_code($tracking, $regenCode);
 if (!($result['ok'] ?? false)) {

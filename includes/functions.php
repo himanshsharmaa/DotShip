@@ -825,6 +825,33 @@ function dotship_generate_otp(int $length = 6): string
     return (string) random_int($min, $max);
 }
 
+function dotship_otp_expires_ms(mixed $value): ?int
+{
+    if ($value instanceof UTCDateTime) {
+        return $value->getMilliseconds();
+    }
+
+    return null;
+}
+
+function dotship_latest_active_otp(string $trackingId): ?array
+{
+    $cursor = dotship_collection('otps')->find(['tracking_id' => $trackingId, 'used' => false], ['sort' => ['created_at' => -1], 'limit' => 1]);
+
+    foreach ($cursor as $docObj) {
+        $doc = $docObj->getArrayCopy();
+        $expiresMs = dotship_otp_expires_ms($doc['expires_at'] ?? null);
+
+        if ($expiresMs !== null && $expiresMs < (int) round(microtime(true) * 1000)) {
+            return null;
+        }
+
+        return $doc;
+    }
+
+    return null;
+}
+
 function dotship_create_otp(string $trackingId, string $contact, string $method = 'email', int $ttlSeconds = 1800): array
 {
     $code = dotship_generate_otp();
@@ -843,7 +870,18 @@ function dotship_create_otp(string $trackingId, string $contact, string $method 
     ];
 
     try {
-        dotship_collection('otps')->insertOne($doc);
+        $inserted = dotship_collection('otps')->insertOne($doc);
+        $newId = $inserted->getInsertedId();
+
+        $existing = dotship_collection('otps')->find(['tracking_id' => $trackingId, 'used' => false], ['sort' => ['created_at' => -1]]);
+        foreach ($existing as $existingObj) {
+            $existingDoc = $existingObj->getArrayCopy();
+            if ((string) ($existingDoc['_id'] ?? '') === (string) $newId) {
+                continue;
+            }
+
+            dotship_collection('otps')->updateOne(['_id' => $existingDoc['_id']], ['$set' => ['used' => true, 'used_at' => $now, 'superseded_at' => $now, 'superseded_by' => $newId]]);
+        }
     } catch (Throwable) {
         // ignore
     }
@@ -883,25 +921,18 @@ function dotship_send_otp(string $contact, string $code, string $method = 'email
 
 function dotship_verify_otp(string $trackingId, string $code): bool
 {
-    $cursor = dotship_collection('otps')->find(['tracking_id' => $trackingId, 'used' => false], ['sort' => ['created_at' => -1], 'limit' => 5]);
+    $doc = dotship_latest_active_otp($trackingId);
 
-    foreach ($cursor as $docObj) {
-        $doc = $docObj->getArrayCopy();
-        $expires = $doc['expires_at'] ?? null;
-        if ($expires instanceof UTCDateTime) {
-            $expiresMs = $expires->toDateTime()->format('U') * 1000 + (int) (($expires->toDateTime()->format('u')) / 1000);
-            if ($expiresMs < (int) round(microtime(true) * 1000)) {
-                continue;
-            }
-        }
+    if (!$doc) {
+        return false;
+    }
 
-        if (isset($doc['code_hash']) && password_verify($code, (string) $doc['code_hash'])) {
-            try {
-                dotship_collection('otps')->updateOne(['_id' => $doc['_id']], ['$set' => ['used' => true, 'used_at' => dotship_now()]]);
-            } catch (Throwable) {
-            }
-            return true;
+    if (isset($doc['code_hash']) && password_verify($code, (string) $doc['code_hash'])) {
+        try {
+            dotship_collection('otps')->updateOne(['_id' => $doc['_id']], ['$set' => ['used' => true, 'used_at' => dotship_now()]]);
+        } catch (Throwable) {
         }
+        return true;
     }
 
     return false;
@@ -934,50 +965,31 @@ function dotship_process_delivery_code(string $trackingId, string $code): array
         return ['ok' => false, 'message' => 'Delivery code can only be used when shipment is out for delivery'];
     }
 
-    // Search latest unused OTPs
-    $cursor = dotship_collection('otps')->find(['tracking_id' => $trackingId, 'used' => false], ['sort' => ['created_at' => -1], 'limit' => 5]);
-    $matched = false;
-    $anyValidNotExpired = false;
+    $doc = dotship_latest_active_otp($trackingId);
 
-    foreach ($cursor as $docObj) {
-        $doc = $docObj->getArrayCopy();
-        $expires = $doc['expires_at'] ?? null;
-        if ($expires instanceof UTCDateTime) {
-            if ($expires->toDateTime()->getTimestamp() < (int) floor(microtime(true))) {
-                // expired
-                continue;
-            }
-            $anyValidNotExpired = true;
+    if ($doc && isset($doc['code_hash']) && password_verify($code, (string) $doc['code_hash'])) {
+        try {
+            dotship_collection('otps')->updateOne(['_id' => $doc['_id']], ['$set' => ['used' => true, 'used_at' => $now]]);
+        } catch (Throwable) {
         }
 
-        if (isset($doc['code_hash']) && password_verify($code, (string) $doc['code_hash'])) {
-            // mark OTP used
-            try {
-                dotship_collection('otps')->updateOne(['_id' => $doc['_id']], ['$set' => ['used' => true, 'used_at' => $now]]);
-            } catch (Throwable) {
-            }
-
-            // mark shipment delivered
-            try {
-                $shipColl->updateOne(['_id' => $shipment['_id']], ['$set' => ['status' => 'delivered', 'delivered_at' => $now, 'delivery_verified' => true, 'updated_at' => $now], '$push' => ['history' => ['status' => 'delivered', 'label' => dotship_status_label('delivered'), 'note' => 'Verified via delivery code', 'at' => $now]]]);
-            } catch (Throwable) {
-            }
-
-            // re-fetch updated shipment for accurate email content
-            $fresh = null;
-            try {
-                $freshObj = $shipColl->findOne(['_id' => $shipment['_id']]);
-                $fresh = $freshObj ? $freshObj->getArrayCopy() : $shipment;
-            } catch (Throwable) {
-                $fresh = $shipment;
-            }
-
-            // send success emails and notify
-            dotship_send_delivery_success_emails($fresh);
-            dotship_notify($fresh, 'delivered', 'Delivery confirmed via code');
-
-            return ['ok' => true, 'message' => 'Delivery code verified. Shipment marked delivered'];
+        try {
+            $shipColl->updateOne(['_id' => $shipment['_id']], ['$set' => ['status' => 'delivered', 'delivered_at' => $now, 'delivery_verified' => true, 'updated_at' => $now], '$push' => ['history' => ['status' => 'delivered', 'label' => dotship_status_label('delivered'), 'note' => 'Verified via delivery code', 'at' => $now]]]);
+        } catch (Throwable) {
         }
+
+        $fresh = null;
+        try {
+            $freshObj = $shipColl->findOne(['_id' => $shipment['_id']]);
+            $fresh = $freshObj ? $freshObj->getArrayCopy() : $shipment;
+        } catch (Throwable) {
+            $fresh = $shipment;
+        }
+
+        dotship_send_delivery_success_emails($fresh);
+        dotship_notify($fresh, 'delivered', 'Delivery confirmed via code');
+
+        return ['ok' => true, 'message' => 'Delivery code verified. Shipment marked delivered'];
     }
 
     // No match
@@ -1000,7 +1012,7 @@ function dotship_process_delivery_code(string $trackingId, string $code): array
         return ['ok' => false, 'message' => 'Too many failed attempts. Verification locked'];
     }
 
-    if (!$anyValidNotExpired) {
+    if (!$doc) {
         return ['ok' => false, 'message' => 'Delivery code expired'];
     }
 
