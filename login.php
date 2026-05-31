@@ -93,4 +93,33 @@ dotship_render_head('Login', 'auth-page');
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const showOtp = document.getElementById('show-otp-btn');
+  const otpDemo = document.getElementById('otp-demo');
+  const otpDigits = Array.from(document.querySelectorAll('.otp-digit'));
+  const otpCancel = document.getElementById('otp-cancel-demo');
+
+  if (showOtp && otpDemo) {
+    showOtp.addEventListener('click', () => { otpDemo.style.display = 'block'; otpDigits[0]?.focus(); });
+  }
+
+  otpDigits.forEach((el, idx) => {
+    el.addEventListener('input', (e) => {
+      const v = el.value.replace(/[^0-9]/g, '');
+      el.value = v;
+      if (v && otpDigits[idx+1]) otpDigits[idx+1].focus();
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !el.value && otpDigits[idx-1]) {
+        otpDigits[idx-1].focus();
+      }
+    });
+  });
+
+  if (otpCancel) {
+    otpCancel.addEventListener('click', () => { otpDemo.style.display = 'none'; });
+  }
+});
+</script>
 <?php dotship_render_assets(); echo '</body></html>'; ?>

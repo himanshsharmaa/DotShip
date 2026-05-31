@@ -5,7 +5,6 @@ use DotShipSqlStore\UTCDateTime;
 
 $shipments = dotship_collection('shipments');
 $notifications = dotship_collection('notifications');
-}
 
 // Configuration: time (seconds) to wait before advancing to next status
 $waitBookedToPacked = (int) (getenv('DS_WAIT_BOOKED_TO_PACKED') ?: 60); // default 60s for demo
