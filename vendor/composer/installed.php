@@ -3,7 +3,7 @@
         'name' => 'dotship/courier-management',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'af823765b952e18de3688de13e8a0e64969b50fa',
+        'reference' => '4ecf5ed65d52f19ce2f121d5ab7da2702596ceea',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'dotship/courier-management' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'af823765b952e18de3688de13e8a0e64969b50fa',
+            'reference' => '4ecf5ed65d52f19ce2f121d5ab7da2702596ceea',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

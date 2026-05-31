@@ -105,6 +105,13 @@ function dotship_escape(string $value): string
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 
+function dotship_url(string $path = ''): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+    return $scheme . '://' . $host . dotship_path($path);
+}
+
 function dotship_normalize_status(string $status): string
 {
     $status = strtolower(trim($status));
@@ -500,7 +507,7 @@ function dotship_require_login(): void
 {
     if (!dotship_is_logged_in()) {
         dotship_flash('warning', 'Please login to continue.');
-        header('Location: ' . dotship_path('login.php'));
+        header('Location: ' . dotship_url('login.php'));
         exit;
     }
 }
@@ -509,7 +516,7 @@ function dotship_require_admin(): void
 {
     if (!dotship_is_admin()) {
         dotship_flash('danger', 'Admin access required.');
-        header('Location: ' . dotship_path('admin/login.php'));
+        header('Location: ' . dotship_url('admin/login.php'));
         exit;
     }
 }
