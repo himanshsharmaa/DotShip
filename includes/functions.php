@@ -634,11 +634,13 @@ function dotship_render_head(string $title, string $bodyClass = ''): void
     echo '<title>' . $safeTitle . '</title>';
     echo '<link rel="preconnect" href="https://fonts.googleapis.com">';
     echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
-    echo '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">';
+    echo '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">';
     echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">';
     echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">';
     echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">';
     echo '<link rel="stylesheet" href="' . dotship_asset('assets/css/style.css') . '">';
+    echo '<link rel="stylesheet" href="' . dotship_asset('assets/css/ui-system.css') . '">';
+    echo '<link rel="stylesheet" href="' . dotship_asset('assets/css/animations.css') . '">';
     echo '</head>';
     echo '<body class="' . dotship_escape($bodyClass) . '">';
 }
@@ -758,7 +760,11 @@ function dotship_render_assets(): void
     echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>';
     echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
     echo '<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>';
+    echo '<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>';
+    echo '<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>';
+    echo '<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.45/bundled/lenis.min.js"></script>';
     echo '<script src="' . dotship_asset('assets/js/app.js') . '"></script>';
+    echo '<script src="' . dotship_asset('assets/js/animations.js') . '"></script>';
 }
 
 function dotship_notify(array $shipment, string $type = 'status_update', string $message = ''): void

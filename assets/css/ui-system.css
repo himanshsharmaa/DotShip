@@ -1,0 +1,81 @@
+/* DOT SHIP UI System — design tokens + components */
+:root{
+  --clr-bg:#F8FAFC;
+  --clr-navy:#0B1220;
+  --clr-navy-deep:#0F172A;
+  --clr-accent:#FF7A00;
+  --clr-accent-2:#FF9A3D;
+  --clr-electric:#4F8CFF;
+  --clr-text:#111827;
+  --clr-muted:#6B7280;
+  --clr-card:#FFFFFF;
+  --radius-lg:20px;
+  --radius-xl:28px;
+  --shadow-soft:0 10px 30px rgba(2,6,23,0.06);
+  --shadow-mid:0 18px 50px rgba(2,6,23,0.10);
+  --shadow-strong:0 30px 80px rgba(2,6,23,0.14);
+  --ease: cubic-bezier(.16,.84,.44,1);
+  --btn-h:48px;
+}
+
+/* Typography */
+html{font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;}
+body{background:var(--clr-bg);color:var(--clr-text);font-size:16px;line-height:1.6}
+h1{font-size:56px;line-height:1.02;font-weight:800}
+h2{font-size:36px;font-weight:700}
+h3{font-size:24px;font-weight:700}
+
+/* Buttons */
+.btn-primary{
+  height:var(--btn-h);padding:0 22px;border-radius:12px;background:linear-gradient(90deg,var(--clr-accent),var(--clr-accent-2));color:#fff;border:0;font-weight:600;box-shadow:var(--shadow-soft);transition:transform .28s var(--ease),box-shadow .28s var(--ease);
+}
+.btn-primary:hover{transform:translateY(-4px) scale(1.02);box-shadow:var(--shadow-mid)}
+
+.btn-secondary{height:var(--btn-h);padding:0 18px;border-radius:12px;background:transparent;border:1px solid rgba(17,24,39,0.06);color:var(--clr-navy);font-weight:600}
+.btn-ghost{background:transparent;border:0;color:var(--clr-electric)}
+
+/* Cards */
+.card-soft{background:var(--clr-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-soft);border:1px solid rgba(2,6,23,0.03);padding:18px;transition:transform .28s var(--ease),box-shadow .28s var(--ease)}
+.card-soft:hover{transform:translateY(-6px);box-shadow:var(--shadow-mid)}
+
+/* Inputs */
+.input-ghost{background:#fff;border-radius:12px;padding:12px 14px;border:1px solid rgba(2,6,23,0.06);transition:box-shadow .22s var(--ease),border-color .22s var(--ease)}
+.input-ghost:focus{outline:none;box-shadow:0 6px 24px rgba(79,140,255,0.12);border-color:rgba(79,140,255,0.9)}
+
+.label-float{position:relative}
+.label-float input{padding-top:18px}
+.label-float label{position:absolute;left:14px;top:10px;font-size:12px;color:var(--clr-muted);transition:transform .22s var(--ease),font-size .22s var(--ease)}
+.label-float input:focus + label, .label-float input:not(:placeholder-shown) + label{transform:translateY(-8px);font-size:11px;color:var(--clr-electric)}
+
+/* Badges */
+.badge-status{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .6rem;border-radius:999px;font-weight:600;font-size:.85rem}
+.badge-booked{background:rgba(11,17,32,0.06);color:var(--clr-navy)}
+.badge-transit{background:linear-gradient(90deg, rgba(79,140,255,0.12), rgba(79,140,255,0.06));color:var(--clr-electric)}
+.badge-delivered{background:linear-gradient(90deg, rgba(22,163,74,0.12), rgba(22,163,74,0.06));color:#16a34a}
+.badge-failed{background:rgba(220,38,38,0.08);color:var(--clr-danger)}
+
+/* Navbar */
+.navbar-glass{backdrop-filter:blur(10px);background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));border-radius:14px;padding:.6rem 1rem;transition:background .28s var(--ease),box-shadow .28s var(--ease)}
+.navbar-dark .nav-link{color:rgba(255,255,255,.9)}
+.navbar-glass.stuck{background:rgba(15,23,42,0.9);box-shadow:var(--shadow-mid)}
+
+/* Sidebar */
+.sidebar{background:linear-gradient(180deg,var(--clr-navy),var(--clr-navy-deep));border-radius:18px;padding:20px;color:#fff}
+.sidebar .nav-link{color:rgba(255,255,255,0.85);border-radius:10px;padding:.7rem}
+.sidebar .nav-link.active{background:rgba(255,255,255,0.06);transform:translateX(6px)}
+
+/* Table */
+.table-modern{background:var(--clr-card);border-radius:14px;overflow:hidden;border:1px solid rgba(2,6,23,0.04)}
+.table-modern thead th{background:linear-gradient(180deg, rgba(250,250,250,0.98), rgba(245,245,245,0.98));position:sticky;top:0}
+.table-modern tbody tr:hover{background:rgba(11,17,32,0.02);transform:translateY(-1px)}
+
+/* OTP boxes */
+.otp-boxes{display:flex;gap:.6rem}
+.otp-box{width:56px;height:56px;border-radius:10px;background:#fff;display:grid;place-items:center;font-size:20px;border:1px solid rgba(2,6,23,0.06);transition:box-shadow .18s var(--ease),transform .18s var(--ease)}
+.otp-box:focus{outline:none;box-shadow:0 8px 30px rgba(79,140,255,0.12)}
+
+/* Utilities */
+.container-narrow{max-width:1100px;margin:0 auto;padding:0 18px}
+
+/* Responsive tweaks */
+@media (max-width:768px){h1{font-size:36px} .btn-primary{height:44px}}
