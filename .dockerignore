@@ -1,0 +1,9 @@
+vendor/
+.env
+.env.*
+.git
+node_modules/
+storage/dotship-data.json
+*.zip
+/tests
+/.vscode
