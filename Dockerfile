@@ -9,6 +9,10 @@ RUN apt-get update \
 # Enable Apache rewrite
 RUN a2enmod rewrite
 
+# Ensure Apache uses the prefork MPM (required by mod_php) and disable other MPMs
+RUN a2dismod mpm_event mpm_worker || true \
+  && a2enmod mpm_prefork || true
+
 # Install composer (copy from official composer image)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
