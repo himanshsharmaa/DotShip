@@ -14,10 +14,10 @@ $modals = '';
 if ($query !== '') {
   $safeQuery = preg_quote($query, '/');
     $filter['$or'] = [
-    ['tracking_id' => new DotShipMongoCompat\Regex($safeQuery, 'i')],
-    ['sender_name' => new DotShipMongoCompat\Regex($safeQuery, 'i')],
-    ['receiver_name' => new DotShipMongoCompat\Regex($safeQuery, 'i')],
-    ['status' => new DotShipMongoCompat\Regex($safeQuery, 'i')],
+    ['tracking_id' => new DotShipSqlStore\Regex($safeQuery, 'i')],
+    ['sender_name' => new DotShipSqlStore\Regex($safeQuery, 'i')],
+    ['receiver_name' => new DotShipSqlStore\Regex($safeQuery, 'i')],
+    ['status' => new DotShipSqlStore\Regex($safeQuery, 'i')],
     ];
 }
 
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = dotship_post('status');
         $note = dotship_post('note');
         $receiverEmail = dotship_post('receiver_email');
-        $existing = dotship_collection('shipments')->findOne(['_id' => new DotShipMongoCompat\ObjectId($shipmentId)]);
+        $existing = dotship_collection('shipments')->findOne(['_id' => new DotShipSqlStore\ObjectId($shipmentId)]);
         $existingRow = $existing ? $existing->getArrayCopy() : null;
 
       // Prevent admin from directly marking shipments as delivered.
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
         dotship_collection('shipments')->updateOne(
-            ['_id' => new DotShipMongoCompat\ObjectId($shipmentId)],
+            ['_id' => new DotShipSqlStore\ObjectId($shipmentId)],
             ['$set' => ['status' => $status, 'receiver_email' => $receiverEmail !== '' ? $receiverEmail : null, 'updated_at' => dotship_now()], '$push' => ['history' => ['status' => $status, 'label' => dotship_status_label($status), 'note' => $note !== '' ? $note : 'Status updated by admin', 'at' => dotship_now()]]]
         );
 
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               try {
                 dotship_collection('shipments')->updateOne(['_id' => $existingRow['_id']], ['$set' => [
                   'code_generated_at' => dotship_now(),
-                  'expiry_time' => new DotShipMongoCompat\UTCDateTime((int) round((microtime(true) + 1800) * 1000)),
+                  'expiry_time' => new DotShipSqlStore\UTCDateTime((int) round((microtime(true) + 1800) * 1000)),
                   'failed_attempts' => 0,
                   'verification_locked' => false,
                   'delivery_verified' => false,
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'delete') {
-        dotship_collection('shipments')->deleteOne(['_id' => new DotShipMongoCompat\ObjectId($shipmentId)]);
+        dotship_collection('shipments')->deleteOne(['_id' => new DotShipSqlStore\ObjectId($shipmentId)]);
         dotship_flash('success', 'Shipment deleted.');
         header('Location: ' . dotship_path('admin/shipments.php'));
         exit;

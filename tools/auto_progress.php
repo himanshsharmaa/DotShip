@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
-use DotShipMongoCompat\UTCDateTime;
+use DotShipSqlStore\UTCDateTime;
 
 $shipments = dotship_collection('shipments');
 $notifications = dotship_collection('notifications');

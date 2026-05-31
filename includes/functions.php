@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use DotShipMongoCompat\UTCDateTime;
-use DotShipMongoCompat\ObjectId;
+use DotShipSqlStore\UTCDateTime;
+use DotShipSqlStore\ObjectId;
 
 function dotship_path(string $path = ''): string
 {

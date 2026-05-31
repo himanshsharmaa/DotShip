@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace DotShipMongoCompat {
+namespace DotShipSqlStore {
     final class ObjectId
     {
         private string $value;
@@ -179,7 +179,7 @@ namespace DotShipMongoCompat {
             $modified = 0;
 
             foreach ($collection as $index => $document) {
-                if (!dotship_mongo_document_matches($document, $filter)) {
+                if (!dotship_sql_document_matches($document, $filter)) {
                     continue;
                 }
 
@@ -221,7 +221,7 @@ namespace DotShipMongoCompat {
             $deleted = 0;
 
             foreach ($collection as $index => $document) {
-                if (!dotship_mongo_document_matches($document, $filter)) {
+                if (!dotship_sql_document_matches($document, $filter)) {
                     continue;
                 }
 
@@ -239,7 +239,7 @@ namespace DotShipMongoCompat {
             $matched = [];
 
             foreach ($collection as $document) {
-                if (dotship_mongo_document_matches($document, $filter)) {
+                if (dotship_sql_document_matches($document, $filter)) {
                     $matched[] = $document;
                 }
             }
@@ -279,46 +279,6 @@ namespace DotShipMongoCompat {
 }
 
 namespace {
-    if (!class_exists(\MongoDB\BSON\ObjectId::class)) {
-        class_alias(\DotShipMongoCompat\ObjectId::class, \MongoDB\BSON\ObjectId::class);
-    }
-
-    if (!class_exists(\MongoDB\BSON\UTCDateTime::class)) {
-        class_alias(\DotShipMongoCompat\UTCDateTime::class, \MongoDB\BSON\UTCDateTime::class);
-    }
-
-    if (!class_exists(\MongoDB\BSON\Regex::class)) {
-        class_alias(\DotShipMongoCompat\Regex::class, \MongoDB\BSON\Regex::class);
-    }
-
-    if (!class_exists(\MongoDB\Client::class)) {
-        class_alias(\DotShipMongoCompat\Client::class, \MongoDB\Client::class);
-    }
-
-    if (!class_exists(\MongoDB\Database::class)) {
-        class_alias(\DotShipMongoCompat\Database::class, \MongoDB\Database::class);
-    }
-
-    if (!class_exists(\MongoDB\Collection::class)) {
-        class_alias(\DotShipMongoCompat\Collection::class, \MongoDB\Collection::class);
-    }
-
-    if (!class_exists(\MongoDB\InsertOneResult::class)) {
-        class_alias(\DotShipMongoCompat\InsertOneResult::class, \MongoDB\InsertOneResult::class);
-    }
-
-    if (!class_exists(\MongoDB\InsertManyResult::class)) {
-        class_alias(\DotShipMongoCompat\InsertManyResult::class, \MongoDB\InsertManyResult::class);
-    }
-
-    if (!class_exists(\MongoDB\UpdateResult::class)) {
-        class_alias(\DotShipMongoCompat\UpdateResult::class, \MongoDB\UpdateResult::class);
-    }
-
-    if (!class_exists(\MongoDB\DeleteResult::class)) {
-        class_alias(\DotShipMongoCompat\DeleteResult::class, \MongoDB\DeleteResult::class);
-    }
-
     function dotship_sql_store_path(): string
     {
         $configured = (string) dotship_env('DOTSHIP_SQLITE_PATH', '');
@@ -412,7 +372,7 @@ namespace {
         while ($row = $statement->fetch()) {
             $decoded = json_decode((string) ($row['data'] ?? ''), true);
             if (is_array($decoded)) {
-                $documents[] = dotship_mongo_rehydrate($decoded);
+                $documents[] = dotship_sql_rehydrate($decoded);
             }
         }
 
@@ -422,19 +382,19 @@ namespace {
     function dotship_sql_write_document(string $collection, array $document, ?\PDO $pdo = null): void
     {
         $pdo ??= dotship_sql_pdo();
-        $document = dotship_mongo_normalize($document);
+        $document = dotship_sql_normalize($document);
         $id = (string) ($document['_id']['value'] ?? $document['_id'] ?? '');
         if ($id === '' && isset($document['_id'])) {
             $id = (string) $document['_id'];
         }
 
         if ($id === '') {
-            $id = (string) new \DotShipMongoCompat\ObjectId();
+            $id = (string) new \DotShipSqlStore\ObjectId();
             $document['_id'] = ['__dotship_type' => 'ObjectId', 'value' => $id];
         }
 
         $payload = json_encode($document, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $nowMs = (new \DotShipMongoCompat\UTCDateTime())->getMilliseconds();
+        $nowMs = (new \DotShipSqlStore\UTCDateTime())->getMilliseconds();
         $statement = $pdo->prepare('INSERT INTO documents (collection, document_id, data, created_ms, updated_ms) VALUES (:collection, :document_id, :data, :created_ms, :updated_ms) ON CONFLICT(collection, document_id) DO UPDATE SET data = excluded.data, updated_ms = excluded.updated_ms');
         $statement->execute([
             ':collection' => $collection,
@@ -459,28 +419,28 @@ namespace {
         ]);
     }
 
-    function dotship_mongo_normalize(mixed $value): mixed
+    function dotship_sql_normalize(mixed $value): mixed
     {
-        if ($value instanceof \DotShipMongoCompat\ObjectId) {
+        if ($value instanceof \DotShipSqlStore\ObjectId) {
             return ['__dotship_type' => 'ObjectId', 'value' => (string) $value];
         }
 
-        if ($value instanceof \DotShipMongoCompat\UTCDateTime) {
+        if ($value instanceof \DotShipSqlStore\UTCDateTime) {
             return ['__dotship_type' => 'UTCDateTime', 'value' => $value->getMilliseconds()];
         }
 
-        if ($value instanceof \DotShipMongoCompat\Regex) {
+        if ($value instanceof \DotShipSqlStore\Regex) {
             return ['__dotship_type' => 'Regex', 'pattern' => $value->pattern, 'flags' => $value->flags];
         }
 
         if ($value instanceof \ArrayObject) {
-            return dotship_mongo_normalize($value->getArrayCopy());
+            return dotship_sql_normalize($value->getArrayCopy());
         }
 
         if (is_array($value)) {
             $normalized = [];
             foreach ($value as $key => $item) {
-                $normalized[$key] = dotship_mongo_normalize($item);
+                $normalized[$key] = dotship_sql_normalize($item);
             }
             return $normalized;
         }
@@ -488,13 +448,13 @@ namespace {
         return $value;
     }
 
-    function dotship_mongo_rehydrate(mixed $value): mixed
+    function dotship_sql_rehydrate(mixed $value): mixed
     {
         if (is_array($value) && isset($value['__dotship_type'])) {
             return match ($value['__dotship_type']) {
-                'ObjectId' => new \DotShipMongoCompat\ObjectId((string) ($value['value'] ?? '')),
-                'UTCDateTime' => new \DotShipMongoCompat\UTCDateTime((int) ($value['value'] ?? 0)),
-                'Regex' => new \DotShipMongoCompat\Regex((string) ($value['pattern'] ?? ''), (string) ($value['flags'] ?? '')),
+                'ObjectId' => new \DotShipSqlStore\ObjectId((string) ($value['value'] ?? '')),
+                'UTCDateTime' => new \DotShipSqlStore\UTCDateTime((int) ($value['value'] ?? 0)),
+                'Regex' => new \DotShipSqlStore\Regex((string) ($value['pattern'] ?? ''), (string) ($value['flags'] ?? '')),
                 default => $value,
             };
         }
@@ -502,7 +462,7 @@ namespace {
         if (is_array($value)) {
             $rehydrated = [];
             foreach ($value as $key => $item) {
-                $rehydrated[$key] = dotship_mongo_rehydrate($item);
+                $rehydrated[$key] = dotship_sql_rehydrate($item);
             }
             return $rehydrated;
         }
@@ -510,7 +470,7 @@ namespace {
         return $value;
     }
 
-    function dotship_mongo_document_matches(array $document, array $filter): bool
+    function dotship_sql_document_matches(array $document, array $filter): bool
     {
         if ($filter === []) {
             return true;
@@ -520,7 +480,7 @@ namespace {
             if ($key === '$or') {
                 $matched = false;
                 foreach ((array) $expected as $subFilter) {
-                    if (dotship_mongo_document_matches($document, (array) $subFilter)) {
+                    if (dotship_sql_document_matches($document, (array) $subFilter)) {
                         $matched = true;
                         break;
                     }
@@ -538,7 +498,7 @@ namespace {
             if (is_array($expected) && array_key_exists('$in', $expected)) {
                 $matched = false;
                 foreach ((array) $expected['$in'] as $candidate) {
-                    if (dotship_mongo_values_equal($actual, $candidate)) {
+                    if (dotship_sql_values_equal($actual, $candidate)) {
                         $matched = true;
                         break;
                     }
@@ -551,7 +511,7 @@ namespace {
                 continue;
             }
 
-            if ($expected instanceof \DotShipMongoCompat\Regex) {
+            if ($expected instanceof \DotShipSqlStore\Regex) {
                 $pattern = '/' . $expected->pattern . '/' . $expected->flags;
                 if (!preg_match($pattern, (string) $actual)) {
                     return false;
@@ -559,7 +519,7 @@ namespace {
                 continue;
             }
 
-            if (!dotship_mongo_values_equal($actual, $expected)) {
+            if (!dotship_sql_values_equal($actual, $expected)) {
                 return false;
             }
         }
@@ -567,13 +527,13 @@ namespace {
         return true;
     }
 
-    function dotship_mongo_values_equal(mixed $actual, mixed $expected): bool
+    function dotship_sql_values_equal(mixed $actual, mixed $expected): bool
     {
-        if ($actual instanceof \DotShipMongoCompat\ObjectId || $expected instanceof \DotShipMongoCompat\ObjectId) {
+        if ($actual instanceof \DotShipSqlStore\ObjectId || $expected instanceof \DotShipSqlStore\ObjectId) {
             return (string) $actual === (string) $expected;
         }
 
-        if ($actual instanceof \DotShipMongoCompat\UTCDateTime && $expected instanceof \DotShipMongoCompat\UTCDateTime) {
+        if ($actual instanceof \DotShipSqlStore\UTCDateTime && $expected instanceof \DotShipSqlStore\UTCDateTime) {
             return $actual->getMilliseconds() === $expected->getMilliseconds();
         }
 
@@ -614,18 +574,18 @@ namespace {
         return $config;
     }
 
-    function dotship_client(): \DotShipMongoCompat\Client
+    function dotship_client(): \DotShipSqlStore\Client
     {
         static $client = null;
 
         if ($client === null) {
-            $client = new \DotShipMongoCompat\Client('sqlite:' . dotship_config()['sqlite_path']);
+            $client = new \DotShipSqlStore\Client('sqlite:' . dotship_config()['sqlite_path']);
         }
 
         return $client;
     }
 
-    function dotship_db(): \DotShipMongoCompat\Database
+    function dotship_db(): \DotShipSqlStore\Database
     {
         static $db = null;
 
@@ -636,7 +596,7 @@ namespace {
         return $db;
     }
 
-    function dotship_collection(string $name): \DotShipMongoCompat\Collection
+    function dotship_collection(string $name): \DotShipSqlStore\Collection
     {
         return dotship_db()->selectCollection($name);
     }
