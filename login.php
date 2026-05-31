@@ -42,9 +42,9 @@ dotship_render_head('Login', 'auth-page');
       </div>
     </div>
     <div class="col-lg-7 auth-panel d-flex align-items-center justify-content-center p-4 p-lg-5">
-      <div class="w-100 auth-form-wrap" data-aos="fade-up">
+      <div class="w-100 auth-form-wrap motion-fade-up" data-aos="fade-up">
         <?php dotship_render_flash_toast('DOT SHIP Login'); ?>
-        <div class="auth-card p-4 p-lg-5">
+        <div class="auth-card p-4 p-lg-5 card-tilt motion-pop">
           <div class="mb-4">
             <span class="section-kicker mb-3">Welcome back</span>
             <h2 class="auth-title mt-3 mb-2">Sign in to continue</h2>
@@ -69,9 +69,25 @@ dotship_render_head('Login', 'auth-page');
               <a href="<?php echo dotship_path('track.php'); ?>" class="small text-accent fw-semibold">Track shipment instead</a>
             </div>
             <button type="submit" class="btn btn-primary-gradient btn-lg w-100 btn-ripple py-3">Login</button>
+            <div class="d-flex gap-2 mt-3">
+              <button type="button" id="show-otp-btn" class="btn btn-outline-secondary btn-sm flex-grow-1">Use delivery OTP</button>
+              <a href="<?php echo dotship_path('register.php'); ?>" class="btn btn-link btn-sm text-muted">Sign up</a>
+            </div>
           </form>
-          <div class="text-center mt-4 small-muted">Need an account? <a href="<?php echo dotship_path('register.php'); ?>" class="fw-semibold text-accent">Create one</a></div>
-          <div class="text-center mt-2"><a href="<?php echo dotship_path('admin/login.php'); ?>" class="small text-decoration-none text-muted">Admin login</a></div>
+          <div id="otp-demo" class="mt-4" style="display:none">
+            <div class="small-muted mb-2 text-center">Enter the 6-digit delivery code</div>
+            <div class="d-flex justify-content-center gap-2 otp-box">
+              <?php for ($i=0;$i<6;$i++): ?>
+                <input inputmode="numeric" maxlength="1" class="form-control otp-digit text-center" style="width:3rem;min-width:48px;font-size:1.25rem;padding:.5rem" />
+              <?php endfor; ?>
+            </div>
+            <div class="text-center mt-3">
+              <button id="otp-submit-demo" class="btn btn-sm btn-primary">Verify</button>
+              <button id="otp-cancel-demo" class="btn btn-link text-muted">Cancel</button>
+            </div>
+          </div>
+
+          <div class="text-center mt-4 small-muted">Admin? <a href="<?php echo dotship_path('admin/login.php'); ?>" class="fw-semibold text-accent">Admin login</a></div>
         </div>
       </div>
     </div>
