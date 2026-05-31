@@ -459,6 +459,12 @@ img {
   gap: 1rem;
 }
 
+/* Reduce bottom padding on landing/track pages for tighter layout */
+.landing-page .section-pad { padding-bottom: 48px; }
+
+/* Ensure tracking cards have breathing room above the footer */
+.tracking-card { margin-bottom: 48px; }
+
 .tracking-activity-item {
   position: relative;
   display: flex;

@@ -54,10 +54,11 @@ h3{font-size:24px;font-weight:700}
 .badge-delivered{background:linear-gradient(90deg, rgba(22,163,74,0.12), rgba(22,163,74,0.06));color:#16a34a}
 .badge-failed{background:rgba(220,38,38,0.08);color:var(--clr-danger)}
 
-/* Navbar */
-.navbar-glass{backdrop-filter:blur(10px);background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));border-radius:14px;padding:.6rem 1rem;transition:background .28s var(--ease),box-shadow .28s var(--ease)}
-.navbar-dark .nav-link{color:rgba(255,255,255,.9)}
-.navbar-glass.stuck{background:rgba(15,23,42,0.9);box-shadow:var(--shadow-mid)}
+/* Navbar (match dark site theme) */
+.navbar-glass{backdrop-filter:blur(10px);background:rgba(11,31,58,0.72);border-radius:14px;padding:.6rem 1rem;transition:background .28s var(--ease),box-shadow .28s var(--ease)}
+.navbar-glass .nav-link{color:rgba(255,255,255,0.9);font-weight:600}
+.navbar-glass .navbar-brand .brand-text{color:#fff}
+.navbar-glass.stuck{background:rgba(15,23,42,0.95);box-shadow:var(--shadow-mid)}
 
 /* Sidebar */
 .sidebar{background:linear-gradient(180deg,var(--clr-navy),var(--clr-navy-deep));border-radius:18px;padding:20px;color:#fff}
