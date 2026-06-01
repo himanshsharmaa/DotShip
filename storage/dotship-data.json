@@ -3,7 +3,7 @@
         "users": [
             {
                 "name": "Admin User",
-                "email": "admin@dotship.local",
+                "email": "admin@dotship.com",
                 "password": "$2y$10$UuzaPcqb7cgdtWaLy7cCtuzijUPdRj7Xh4U2XNGr/W/65x79s5iAG",
                 "role": "admin",
                 "phone": "+91 90000 00001",
