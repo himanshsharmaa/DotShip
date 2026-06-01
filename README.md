@@ -59,7 +59,7 @@ http://127.0.0.1:8000
 
 ## Default Demo Accounts
 
-- Admin: `admin@dotship.local` / `Admin@1234`
+- Admin: `admin@dotship.com` / `Admin@1234`
 - Customer: `demo@dotship.local` / `Demo@1234`
 
 ## Notes

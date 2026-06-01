@@ -564,7 +564,7 @@ namespace {
             'app_tagline' => 'Fast. Smart. Reliable.',
             'sqlite_path' => dotship_sql_store_path(),
             'formspree_endpoint' => dotship_env('DOTSHIP_FORMSPREE_ENDPOINT', 'https://formspree.io/f/xwpbardz'),
-            'admin_email' => dotship_env('DOTSHIP_ADMIN_EMAIL', 'admin@dotship.local'),
+            'admin_email' => dotship_env('DOTSHIP_ADMIN_EMAIL', 'admin@dotship.com'),
             'admin_password' => dotship_env('DOTSHIP_ADMIN_PASSWORD', 'Admin@1234'),
             'demo_email' => dotship_env('DOTSHIP_DEMO_EMAIL', 'demo@dotship.local'),
             'demo_password' => dotship_env('DOTSHIP_DEMO_PASSWORD', 'Demo@1234'),
