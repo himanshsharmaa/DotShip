@@ -763,6 +763,15 @@ img {
   .tracking-search .btn { width: 100%; }
 }
 
+/* Reduce hero top padding on mobile for landing/track pages so search appears sooner */
+@media (max-width: 768px) {
+  .landing-page .hero-wrap { padding-top: 56px; }
+  .auth-panel { padding: 1.25rem; }
+}
+
+/* Ensure stuck navbar shows a subtle divider and shadow */
+.navbar-glass.stuck { border-bottom: 1px solid rgba(255,255,255,0.06); box-shadow: 0 12px 30px rgba(2,6,23,0.12); }
+
 .progress-steps {
   position: relative;
   display: grid;

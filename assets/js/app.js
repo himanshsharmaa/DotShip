@@ -115,6 +115,21 @@ document.addEventListener('DOMContentLoaded', () => {
     observer.observe(el);
   });
 
+  // Sticky navbar contrast toggle on scroll
+  const navbar = document.querySelector('.navbar-glass');
+  function checkNavbarSticky() {
+    if (!navbar) return;
+    if (window.scrollY > 24) {
+      navbar.classList.add('stuck');
+    } else {
+      navbar.classList.remove('stuck');
+    }
+  }
+
+  window.addEventListener('scroll', checkNavbarSticky, { passive: true });
+  // initial check
+  checkNavbarSticky();
+
   // Lightweight tilt on hover for .card-tilt elements
   document.querySelectorAll('.card-tilt').forEach((card) => {
     card.addEventListener('mousemove', (e) => {
