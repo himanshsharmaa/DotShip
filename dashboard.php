@@ -33,7 +33,7 @@ dotship_render_flash();
 ?>
 <div class="row g-4 mb-4">
   <div class="col-md-6 col-xl-3">
-    <div class="stat-card p-4 h-100">
+    <div class="stat-card p-4 h-100 card-tilt motion-pop">
       <div class="d-flex align-items-center justify-content-between">
         <div>
           <div class="stat-title small text-uppercase mb-2">Total Shipments</div>
@@ -80,7 +80,7 @@ dotship_render_flash();
 
 <div class="row g-4">
   <div class="col-xl-7">
-    <div class="dashboard-panel p-4 h-100">
+    <div class="dashboard-panel p-4 h-100 card-tilt motion-pop">
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
           <h5 class="panel-title fw-bold mb-1">Shipment activity</h5>
@@ -94,7 +94,7 @@ dotship_render_flash();
     </div>
   </div>
   <div class="col-xl-5">
-    <div class="dashboard-panel p-4 h-100">
+    <div class="dashboard-panel p-4 h-100 card-tilt motion-pop">
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
           <h5 class="panel-title fw-bold mb-1">Recent shipment</h5>
@@ -121,7 +121,7 @@ dotship_render_flash();
   </div>
 </div>
 
-<div class="table-card p-4 mt-4">
+<div class="table-card p-4 mt-4 card-tilt motion-pop">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
       <h5 class="table-title fw-bold mb-1">Recent shipments</h5>

@@ -69,9 +69,9 @@ dotship_render_head('Register', 'auth-page');
       </div>
     </div>
     <div class="col-lg-7 auth-panel d-flex align-items-center justify-content-center p-4 p-lg-5">
-      <div class="w-100 auth-form-wrap" data-aos="fade-up">
+      <div class="w-100 auth-form-wrap motion-fade-up" data-aos="fade-up">
         <?php dotship_render_flash_toast('DOT SHIP Register'); ?>
-        <div class="auth-card p-4 p-lg-5">
+        <div class="auth-card p-4 p-lg-5 card-tilt motion-pop">
           <div class="mb-4">
             <span class="section-kicker mb-3">Join the platform</span>
             <h2 class="auth-title mt-3 mb-2">Register a new account</h2>
@@ -101,9 +101,9 @@ dotship_render_head('Register', 'auth-page');
               <label for="confirm_password">Confirm password</label>
               <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2 text-muted" data-toggle-password="#confirm_password"><i class="bi bi-eye"></i></button>
             </div>
-            <div class="col-12">
-              <button type="submit" class="btn btn-primary-gradient btn-lg w-100 btn-ripple py-3">Create account</button>
-            </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary-gradient btn-lg w-100 btn-ripple py-3">Create account</button>
+              </div>
           </form>
           <div class="text-center mt-4 small-muted">Already registered? <a href="<?php echo dotship_path('login.php'); ?>" class="fw-semibold text-accent">Login here</a></div>
         </div>
